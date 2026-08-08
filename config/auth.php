@@ -1,6 +1,8 @@
 <?php
 
-use App\Models\User;
+use App\Models\DoctorAccount;
+use App\Models\MasterAdmin;
+use App\Models\MedicineOrganization;
 
 return [
 
@@ -40,7 +42,7 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'master_admins',
         ],
     ],
 
@@ -62,15 +64,20 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'master_admins' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => MasterAdmin::class,
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'doctors' => [
+            'driver' => 'eloquent',
+            'model' => DoctorAccount::class,
+        ],
+
+        'medicine_organizations' => [
+            'driver' => 'eloquent',
+            'model' => MedicineOrganization::class,
+        ]
     ],
 
     /*
@@ -93,9 +100,12 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+        'master_admins' => [
+            'provider' => 'master_admins',
+            'table' => env(
+                'AUTH_PASSWORD_RESET_TOKEN_TABLE',
+                'password_reset_tokens'
+            ),
             'expire' => 60,
             'throttle' => 60,
         ],
