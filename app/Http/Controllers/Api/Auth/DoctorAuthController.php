@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\DoctorLoginRequest;
 use App\Http\Requests\Auth\DoctorRegisterRequest;
 use App\Services\Auth\DoctorAuthService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DoctorAuthController extends Controller
 {
     public function __construct(
         private readonly DoctorAuthService $doctorAuthService
-    ) {
-    }
+    ) {}
 
     public function register(DoctorRegisterRequest $request): JsonResponse
     {
@@ -35,6 +36,61 @@ class DoctorAuthController extends Controller
                     'email_verified_at' => $doctor->email_verified_at,
                 ],
             ]
+        );
+    }
+
+    public function login(DoctorLoginRequest $request): JsonResponse
+    {
+        $result = $this->doctorAuthService->login(
+            $request->validated()
+        );
+
+        return ApiResponse::success(
+            message: 'Doctor login successful.',
+            data: [
+                'doctor' => [
+                    'id' => $result['doctor']->id,
+                    'name' => $result['doctor']->name,
+                    'email' => $result['doctor']->email,
+                    'mobile' => $result['doctor']->mobile,
+                    'specialization' => $result['doctor']->specialization,
+                    'medical_license_number' => $result['doctor']->medical_license_number,
+                    'is_active' => $result['doctor']->is_active,
+                    'email_verified_at' => $result['doctor']->email_verified_at,
+                ],
+                'token' => $result['token'],
+            ]
+        );
+    }
+
+
+    public function me(Request $request): JsonResponse
+    {
+        $doctor = $request->user();
+
+        return ApiResponse::success(
+            message: 'Doctor profile retrieved successfully.',
+            data: [
+                'doctor' => [
+                    'id' => $doctor->id,
+                    'name' => $doctor->name,
+                    'email' => $doctor->email,
+                    'mobile' => $doctor->mobile,
+                    'specialization' => $doctor->specialization,
+                    'medical_license_number' => $doctor->medical_license_number,
+                    'is_active' => $doctor->is_active,
+                    'email_verified_at' => $doctor->email_verified_at,
+                ],
+            ]
+        );
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return ApiResponse::success(
+            message: 'Doctor logged out successfully.'
         );
     }
 }
