@@ -124,6 +124,53 @@ class ClinicalExtractionService
 
                 /*
             |--------------------------------------------------------------------------
+            | Save Instructions / Follow-up / Other to Visit
+            |--------------------------------------------------------------------------
+            */
+
+                $additionalNotes = [];
+
+                foreach ($payload['instructions'] ?? [] as $instruction) {
+                    if (!empty($instruction['text'])) {
+                        $additionalNotes[] = 'Instruction: ' . $instruction['text'];
+                    }
+                }
+
+                if (!empty($payload['follow_up'])) {
+                    $followUp = $payload['follow_up'];
+
+                    $text = 'Follow-up: ' .
+                        ($followUp['value'] ?? '') . ' ' .
+                        ($followUp['unit'] ?? '');
+
+                    if (!empty($followUp['instructions'])) {
+                        $text .= ' - ' . $followUp['instructions'];
+                    }
+
+                    $additionalNotes[] = $text;
+                }
+
+                foreach ($payload['other'] ?? [] as $other) {
+                    if (!empty($other['text'])) {
+                        $additionalNotes[] = 'Other: ' . $other['text'];
+                    }
+                }
+
+                if (!empty($additionalNotes)) {
+                    $visit = $extraction->visit;
+
+                    $clinicalNotes = $visit->clinical_notes;
+
+                    $visit->update([
+                        'clinical_notes' => trim(
+                            ($clinicalNotes ? $clinicalNotes . "\n\n" : '') .
+                                implode("\n", $additionalNotes)
+                        ),
+                    ]);
+                }
+
+                /*
+            |--------------------------------------------------------------------------
             | Create Prescription
             |--------------------------------------------------------------------------
             */
@@ -156,7 +203,7 @@ class ClinicalExtractionService
                     }
                 }
 
-                            /*
+                /*
             |--------------------------------------------------------------------------
             | Create Investigation
             |--------------------------------------------------------------------------
@@ -197,6 +244,46 @@ class ClinicalExtractionService
                     'status' => 'confirmed',
                     'payload' => $payload,
                     'confirmed_at' => now(),
+                ]);
+
+                return $extraction->fresh([
+                    'clinic',
+                    'patient',
+                    'visit',
+                ]);
+            }
+        );
+    }
+
+    public function reject(
+        int $visitId,
+        string $reason
+    ): ClinicalExtraction {
+        return DB::connection('doctor')->transaction(
+            function () use ($visitId, $reason) {
+
+                $extraction = ClinicalExtraction::query()
+                    ->where('visit_id', $visitId)
+                    ->where('status', 'pending')
+                    ->latest('id')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$extraction) {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'No pending clinical extraction found.',
+                        ],
+                    ]);
+                }
+
+                $payload = $extraction->payload;
+
+                $payload['rejection_reason'] = $reason;
+
+                $extraction->update([
+                    'status' => 'rejected',
+                    'payload' => $payload,
                 ]);
 
                 return $extraction->fresh([

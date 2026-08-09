@@ -77,6 +77,7 @@ Route::middleware(['auth:sanctum', 'doctor.tenant',])->prefix('doctor')->group(f
     Route::post('visits/{visitId}/clinical-extraction',[ClinicalExtractionController::class, 'store']);
     Route::get('visits/{visitId}/clinical-extraction',[ClinicalExtractionController::class, 'show']);
     Route::post('visits/{visitId}/clinical-extraction/confirm',[ClinicalExtractionController::class, 'confirm']);
+    Route::post('visits/{visitId}/clinical-extraction/reject',[ClinicalExtractionController::class, 'reject']);
 
 
 

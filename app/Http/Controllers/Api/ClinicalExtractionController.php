@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ClinicalExtraction\ClinicalExtractionConfirmRequest;
+use App\Http\Requests\ClinicalExtraction\ClinicalExtractionRejectRequest;
 use App\Http\Requests\ClinicalExtraction\ClinicalExtractionStoreRequest;
 use App\Services\ClinicalExtraction\ClinicalExtractionService;
 use App\Support\ApiResponse;
@@ -64,6 +65,24 @@ class ClinicalExtractionController extends Controller
 
         return ApiResponse::success(
             message: 'Clinical extraction confirmed successfully.',
+            data: [
+                'extraction' => $extraction,
+            ]
+        );
+    }
+
+    public function reject(
+        ClinicalExtractionRejectRequest $request,
+        ClinicalExtractionService $clinicalExtractionService,
+        int $visitId
+    ): JsonResponse {
+        $extraction = $clinicalExtractionService->reject(
+            $visitId,
+            $request->validated('reason')
+        );
+
+        return ApiResponse::success(
+            message: 'Clinical extraction rejected successfully.',
             data: [
                 'extraction' => $extraction,
             ]
