@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Clinic extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $connection = 'doctor';
 
@@ -29,5 +29,10 @@ class Clinic extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function workingHours()
+    {
+        return $this->hasMany(ClinicWorkingHour::class);
     }
 }

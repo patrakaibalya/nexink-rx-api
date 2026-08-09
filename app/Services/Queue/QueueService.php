@@ -57,6 +57,7 @@ class QueueService
                     'status' => 'waiting',
                     'arrived_at' => now(),
                     'notes' => $data['notes'] ?? null,
+                    'appointment_id' => $data['appointment_id'] ?? null,
                 ]);
             }
         );
@@ -208,5 +209,70 @@ class QueueService
             ])
             ->orderByDesc('called_at')
             ->first();
+    }
+
+    public function summary(
+        int $clinicId,
+        ?string $date = null
+    ): array {
+        $date ??= now()->toDateString();
+
+        $query = Queue::query()
+            ->where('clinic_id', $clinicId)
+            ->whereDate('queue_date', $date);
+
+        $counts = $query
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return [
+            'date' => $date,
+            'clinic_id' => $clinicId,
+            'total' => (int) $counts->sum(),
+
+            'waiting' => (int) ($counts['waiting'] ?? 0),
+
+            'called' => (int) ($counts['called'] ?? 0),
+
+            'consulting' => (int) ($counts['consulting'] ?? 0),
+
+            'completed' => (int) ($counts['completed'] ?? 0),
+
+            'cancelled' => (int) ($counts['cancelled'] ?? 0),
+
+            'no_show' => (int) ($counts['no_show'] ?? 0),
+        ];
+    }
+
+    public function history(array $filters)
+    {
+        $query = Queue::query()
+            ->with([
+                'clinic',
+                'patient',
+            ])
+            ->where(
+                'clinic_id',
+                $filters['clinic_id']
+            )
+            ->whereBetween(
+                'queue_date',
+                [
+                    $filters['from'],
+                    $filters['to'],
+                ]
+            )
+            ->orderByDesc('queue_date')
+            ->orderBy('queue_number');
+
+        if (!empty($filters['status'])) {
+            $query->where(
+                'status',
+                $filters['status']
+            );
+        }
+
+        return $query->get();
     }
 }

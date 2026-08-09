@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Clinic\ClinicStoreRequest;
 use App\Http\Requests\Clinic\ClinicUpdateRequest;
+use App\Http\Requests\Clinic\ClinicWorkingHoursRequest;
 use App\Models\Clinic;
+use App\Services\Clinic\ClinicService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -122,5 +124,21 @@ class ClinicController extends Controller
         );
     }
 
+    public function updateWorkingHours(
+        ClinicWorkingHoursRequest $request,
+        ClinicService $clinicService,
+        int $clinicId
+    ): JsonResponse {
+        $clinic = $clinicService->updateWorkingHours(
+            $clinicId,
+            $request->input('working_hours')
+        );
 
+        return ApiResponse::success(
+            message: 'Clinic working hours updated successfully.',
+            data: [
+                'clinic' => $clinic,
+            ]
+        );
+    }
 }

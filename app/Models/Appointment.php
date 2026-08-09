@@ -4,36 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Queue extends Model
+class Appointment extends Model
 {
-    use HasFactory;
+    use HasFactory,SoftDeletes;
 
     protected $connection = 'doctor';
 
     protected $fillable = [
         'clinic_id',
         'patient_id',
-        'queue_number',
-        'queue_date',
-        'source',
+        'appointment_date',
+        'appointment_time',
         'status',
+        'source',
+        'reason',
+        'notes',
+        'confirmed_at',
         'arrived_at',
-        'called_at',
-        'consultation_started_at',
         'completed_at',
         'cancelled_at',
-        'notes',
-        'appointment_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'queue_date' => 'date',
+            'appointment_date' => 'date',
+            'confirmed_at' => 'datetime',
             'arrived_at' => 'datetime',
-            'called_at' => 'datetime',
-            'consultation_started_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
@@ -47,10 +46,5 @@ class Queue extends Model
     public function patient()
     {
         return $this->belongsTo(Patient::class);
-    }
-
-    public function appointment()
-    {
-        return $this->belongsTo(Appointment::class);
     }
 }

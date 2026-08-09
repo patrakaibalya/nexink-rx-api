@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\Auth\DoctorAuthController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\PatientController;
@@ -29,17 +30,30 @@ Route::middleware(['auth:sanctum', 'doctor.tenant',])->prefix('doctor')->group(f
 
     Route::get('clinics', [ClinicController::class, 'index']);
     Route::post('clinics', [ClinicController::class, 'store']);
-    Route::get('clinics/{clinicId}',[ClinicController::class, 'show']);
-    Route::put('clinics/{clinicId}',[ClinicController::class, 'update']);
-    Route::patch('clinics/{clinicId}/status',[ClinicController::class, 'toggleStatus']);
-    Route::delete('clinics/{clinicId}',[ClinicController::class, 'destroy']);
+    Route::get('clinics/{clinicId}', [ClinicController::class, 'show']);
+    Route::put('clinics/{clinicId}', [ClinicController::class, 'update']);
+    Route::patch('clinics/{clinicId}/status', [ClinicController::class, 'toggleStatus']);
+    Route::delete('clinics/{clinicId}', [ClinicController::class, 'destroy']);
 
-    Route::post('queues',[QueueController::class, 'store']);
-    Route::get('queues',[QueueController::class, 'index']);
-    Route::patch('queues/{queueId}/status',[QueueController::class, 'updateStatus']);
-    Route::post('queues/call-next',[QueueController::class, 'callNext']);
-    Route::get('queues/current',[QueueController::class, 'current']);
+    Route::post('queues', [QueueController::class, 'store']);
+    Route::get('queues', [QueueController::class, 'index']);
+    Route::patch('queues/{queueId}/status', [QueueController::class, 'updateStatus']);
+    Route::post('queues/call-next', [QueueController::class, 'callNext']);
+    Route::get('queues/current', [QueueController::class, 'current']);
+    Route::get('queues/summary', [QueueController::class, 'summary']);
+    Route::get('queues/history', [QueueController::class, 'history']);
 
+    Route::post('appointments', [AppointmentController::class, 'store']);
+    Route::get('appointments', [AppointmentController::class, 'index']);
+    Route::get('appointments/availability', [AppointmentController::class, 'availability']);
+    Route::get('appointments/{appointmentId}', [AppointmentController::class, 'show']);
+    Route::put('appointments/{appointmentId}', [AppointmentController::class, 'update']);
+    Route::delete('appointments/{appointmentId}', [AppointmentController::class, 'destroy']);
+    Route::patch('appointments/{appointmentId}/status', [AppointmentController::class, 'updateStatus']);
+    Route::post('appointments/{appointmentId}/arrive', [AppointmentController::class, 'arrive']);
+    Route::post('appointments/book', [AppointmentController::class, 'bookForPatient']);
+
+    Route::put('clinics/{clinicId}/working-hours',[ClinicController::class, 'updateWorkingHours']);
 
 
 

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Queue\CallNextQueueRequest;
 use App\Http\Requests\Queue\CurrentQueueRequest;
+use App\Http\Requests\Queue\QueueHistoryRequest;
 use App\Http\Requests\Queue\QueueIndexRequest;
 use App\Http\Requests\Queue\QueueStatusRequest;
 use App\Http\Requests\Queue\QueueStoreRequest;
+use App\Http\Requests\Queue\QueueSummaryRequest;
 use App\Models\Queue;
 use App\Services\Queue\QueueService;
 use App\Support\ApiResponse;
@@ -132,6 +134,41 @@ class QueueController extends Controller
             message: 'Current queue retrieved successfully.',
             data: [
                 'queue' => $queue,
+            ]
+        );
+    }
+
+    public function summary(
+        QueueSummaryRequest $request,
+        QueueService $queueService
+    ): JsonResponse {
+        $summary = $queueService->summary(
+            $request->integer('clinic_id'),
+            $request->input('date')
+        );
+
+        return ApiResponse::success(
+            message: 'Queue summary retrieved successfully.',
+            data: [
+                'summary' => $summary,
+            ]
+        );
+    }
+
+    public function history(
+        QueueHistoryRequest $request,
+        QueueService $queueService
+    ): JsonResponse {
+        $queues = $queueService->history(
+            $request->validated()
+        );
+
+        return ApiResponse::success(
+            message: 'Queue history retrieved successfully.',
+            data: [
+                'from' => $request->input('from'),
+                'to' => $request->input('to'),
+                'queues' => $queues,
             ]
         );
     }
