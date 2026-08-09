@@ -54,4 +54,24 @@ class ClinicService
             }
         );
     }
+
+    public function getWorkingHours(
+        int $clinicId
+    ): Clinic {
+        $clinic = Clinic::query()
+            ->with([
+                'workingHours',
+            ])
+            ->find($clinicId);
+
+        if (!$clinic) {
+            throw ValidationException::withMessages([
+                'clinic_id' => [
+                    'Clinic not found.',
+                ],
+            ]);
+        }
+
+        return $clinic;
+    }
 }

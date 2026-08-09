@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Clinic;
 use App\Models\Patient;
 use App\Models\Queue;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -466,6 +467,366 @@ class AppointmentService
             'clinic_id' => $clinicId,
             'date' => $date,
             'appointments' => $appointments,
+        ];
+    }
+
+    public function slots(
+        int $clinicId,
+        string $date
+    ): array {
+        $clinic = Clinic::query()
+            ->with('workingHours')
+            ->find($clinicId);
+
+        if (!$clinic) {
+            throw ValidationException::withMessages([
+                'clinic_id' => [
+                    'Clinic not found.',
+                ],
+            ]);
+        }
+
+        if (!$clinic->is_active) {
+            throw ValidationException::withMessages([
+                'clinic_id' => [
+                    'Clinic is inactive.',
+                ],
+            ]);
+        }
+
+        $requestedDate = Carbon::createFromFormat(
+            'Y-m-d',
+            $date,
+            $clinic->timezone
+        );
+
+        /*
+    |--------------------------------------------------------------------------
+    | Find working hours
+    |--------------------------------------------------------------------------
+    */
+
+        $dayOfWeek = $requestedDate->dayOfWeekIso;
+
+        $workingHours = $clinic->workingHours
+            ->firstWhere('day_of_week', $dayOfWeek);
+
+        if (!$workingHours || $workingHours->is_closed) {
+            return [
+                'clinic_id' => $clinicId,
+                'date' => $date,
+                'timezone' => $clinic->timezone,
+                'duration_minutes' => $clinic->appointment_duration_minutes,
+                'slots' => [],
+            ];
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Generate slots
+    |--------------------------------------------------------------------------
+    */
+
+        $start = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $date . ' ' . $workingHours->opening_time,
+            $clinic->timezone
+        );
+
+        $end = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $date . ' ' . $workingHours->closing_time,
+            $clinic->timezone
+        );
+
+        $duration = $clinic->appointment_duration_minutes;
+
+        /*
+    |--------------------------------------------------------------------------
+    | Existing appointments
+    |--------------------------------------------------------------------------
+    */
+
+        $bookedTimes = Appointment::query()
+            ->where('clinic_id', $clinicId)
+            ->where('appointment_date', $date)
+            ->whereNotIn('status', [
+                'cancelled',
+                'no_show',
+            ])
+            ->pluck('appointment_time')
+            ->map(
+                fn($time) => substr($time, 0, 5)
+            )
+            ->flip();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Build slots
+    |--------------------------------------------------------------------------
+    */
+
+        $slots = [];
+
+        while (
+            $start->copy()
+            ->addMinutes($duration)
+            ->lte($end)
+        ) {
+            $time = $start->format('H:i');
+
+            $slots[] = [
+                'time' => $time,
+                'available' => !isset($bookedTimes[$time]),
+            ];
+
+            $start->addMinutes($duration);
+        }
+
+        return [
+            'clinic_id' => $clinicId,
+            'date' => $date,
+            'timezone' => $clinic->timezone,
+            'duration_minutes' => $duration,
+            'slots' => $slots,
+        ];
+    }
+
+    public function reschedule(
+        int $appointmentId,
+        string $date,
+        string $time
+    ): Appointment {
+        return DB::connection('doctor')->transaction(
+            function () use ($appointmentId, $date, $time) {
+
+                $appointment = Appointment::query()
+                    ->lockForUpdate()
+                    ->find($appointmentId);
+
+                if (!$appointment) {
+                    throw ValidationException::withMessages([
+                        'appointment_id' => [
+                            'Appointment not found.',
+                        ],
+                    ]);
+                }
+
+                if (in_array($appointment->status, [
+                    'completed',
+                    'cancelled',
+                    'no_show',
+                ], true)) {
+                    throw ValidationException::withMessages([
+                        'appointment' => [
+                            'This appointment cannot be rescheduled.',
+                        ],
+                    ]);
+                }
+
+                $clinic = Clinic::query()
+                    ->with('workingHours')
+                    ->find($appointment->clinic_id);
+
+                if (!$clinic || !$clinic->is_active) {
+                    throw ValidationException::withMessages([
+                        'clinic_id' => [
+                            'Clinic is not available.',
+                        ],
+                    ]);
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Check working day
+            |--------------------------------------------------------------------------
+            */
+
+                $requestedDate = Carbon::createFromFormat(
+                    'Y-m-d',
+                    $date,
+                    $clinic->timezone
+                );
+
+                $dayOfWeek = $requestedDate->dayOfWeekIso;
+
+                $workingHours = $clinic->workingHours
+                    ->firstWhere('day_of_week', $dayOfWeek);
+
+                if (!$workingHours || $workingHours->is_closed) {
+                    throw ValidationException::withMessages([
+                        'appointment_date' => [
+                            'Clinic is closed on this date.',
+                        ],
+                    ]);
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Check appointment time is inside working hours
+            |--------------------------------------------------------------------------
+            */
+
+                $slotStart = Carbon::createFromFormat(
+                    'Y-m-d H:i',
+                    $date . ' ' . $time,
+                    $clinic->timezone
+                );
+
+                $slotEnd = $slotStart->copy()
+                    ->addMinutes(
+                        $clinic->appointment_duration_minutes
+                    );
+
+                $workingStart = Carbon::createFromFormat(
+                    'Y-m-d H:i:s',
+                    $date . ' ' . $workingHours->opening_time,
+                    $clinic->timezone
+                );
+
+                $workingEnd = Carbon::createFromFormat(
+                    'Y-m-d H:i:s',
+                    $date . ' ' . $workingHours->closing_time,
+                    $clinic->timezone
+                );
+
+                if (
+                    $slotStart->lt($workingStart)
+                    || $slotEnd->gt($workingEnd)
+                ) {
+                    throw ValidationException::withMessages([
+                        'appointment_time' => [
+                            'Selected time is outside clinic working hours.',
+                        ],
+                    ]);
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Check double booking
+            |--------------------------------------------------------------------------
+            */
+
+                $existingAppointment = Appointment::query()
+                    ->where('clinic_id', $appointment->clinic_id)
+                    ->where('appointment_date', $date)
+                    ->where('appointment_time', $time . ':00')
+                    ->whereNotIn('status', [
+                        'cancelled',
+                        'no_show',
+                    ])
+                    ->where('id', '!=', $appointment->id)
+                    ->exists();
+
+                if ($existingAppointment) {
+                    throw ValidationException::withMessages([
+                        'appointment_time' => [
+                            'This appointment slot is already booked.',
+                        ],
+                    ]);
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Update appointment
+            |--------------------------------------------------------------------------
+            */
+
+                $appointment->update([
+                    'appointment_date' => $date,
+                    'appointment_time' => $time,
+                ]);
+
+                return $appointment->fresh([
+                    'clinic',
+                    'patient',
+                ]);
+            }
+        );
+    }
+
+    public function upcoming(
+        int $limit = 20
+    ) {
+        $clinic = Clinic::query()
+            ->select([
+                'id',
+                'timezone',
+            ])
+            ->first();
+
+        if (!$clinic) {
+            return collect();
+        }
+
+        $today = now($clinic->timezone)
+            ->toDateString();
+
+        return Appointment::query()
+            ->with([
+                'clinic',
+                'patient',
+            ])
+            ->whereDate(
+                'appointment_date',
+                '>=',
+                $today
+            )
+            ->whereNotIn('status', [
+                'cancelled',
+                'no_show',
+                'completed',
+            ])
+            ->orderBy('appointment_date')
+            ->orderBy('appointment_time')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function dashboardSummary(): array
+    {
+        $clinic = Clinic::query()
+            ->select([
+                'id',
+                'timezone',
+            ])
+            ->first();
+
+        if (!$clinic) {
+            return [
+                'date' => now()->toDateString(),
+                'total' => 0,
+                'scheduled' => 0,
+                'confirmed' => 0,
+                'arrived' => 0,
+                'completed' => 0,
+                'cancelled' => 0,
+                'no_show' => 0,
+            ];
+        }
+
+        $today = now($clinic->timezone)
+            ->toDateString();
+
+        $counts = Appointment::query()
+            ->whereDate(
+                'appointment_date',
+                $today
+            )
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return [
+            'date' => $today,
+            'total' => $counts->sum(),
+
+            'scheduled' => (int) ($counts['scheduled'] ?? 0),
+            'confirmed' => (int) ($counts['confirmed'] ?? 0),
+            'arrived' => (int) ($counts['arrived'] ?? 0),
+            'completed' => (int) ($counts['completed'] ?? 0),
+            'cancelled' => (int) ($counts['cancelled'] ?? 0),
+            'no_show' => (int) ($counts['no_show'] ?? 0),
         ];
     }
 }

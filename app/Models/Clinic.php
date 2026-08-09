@@ -22,12 +22,14 @@ class Clinic extends Model
         'email',
         'timezone',
         'is_active',
+        'appointment_duration_minutes',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'appointment_duration_minutes' => 'integer',
         ];
     }
 

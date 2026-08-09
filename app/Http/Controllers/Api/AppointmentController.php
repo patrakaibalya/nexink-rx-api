@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Appointment\AppointmentAvailabilityRequest;
 use App\Http\Requests\Appointment\AppointmentIndexRequest;
+use App\Http\Requests\Appointment\AppointmentRescheduleRequest;
+use App\Http\Requests\Appointment\AppointmentSlotsRequest;
 use App\Http\Requests\Appointment\AppointmentStatusRequest;
 use App\Http\Requests\Appointment\AppointmentStoreRequest;
 use App\Http\Requests\Appointment\AppointmentUpdateRequest;
@@ -155,6 +157,68 @@ class AppointmentController extends Controller
             message: 'Appointment availability retrieved successfully.',
             data: [
                 'availability' => $availability,
+            ]
+        );
+    }
+
+    public function slots(
+        AppointmentSlotsRequest $request,
+        AppointmentService $appointmentService
+    ): JsonResponse {
+        $slots = $appointmentService->slots(
+            $request->integer('clinic_id'),
+            $request->input('date')
+        );
+
+        return ApiResponse::success(
+            message: 'Appointment slots retrieved successfully.',
+            data: [
+                'slots' => $slots,
+            ]
+        );
+    }
+
+    public function reschedule(
+        AppointmentRescheduleRequest $request,
+        AppointmentService $appointmentService,
+        int $appointmentId
+    ): JsonResponse {
+        $appointment = $appointmentService->reschedule(
+            $appointmentId,
+            $request->input('appointment_date'),
+            $request->input('appointment_time')
+        );
+
+        return ApiResponse::success(
+            message: 'Appointment rescheduled successfully.',
+            data: [
+                'appointment' => $appointment,
+            ]
+        );
+    }
+
+    public function upcoming(
+        AppointmentService $appointmentService
+    ): JsonResponse {
+        $appointments = $appointmentService->upcoming();
+
+        return ApiResponse::success(
+            message: 'Upcoming appointments retrieved successfully.',
+            data: [
+                'appointments' => $appointments,
+            ]
+        );
+    }
+
+    public function dashboardSummary(
+        AppointmentService $appointmentService
+    ): JsonResponse {
+        $summary = $appointmentService->dashboardSummary();
+
+        return ApiResponse::success(
+            message: 'Appointment dashboard summary retrieved successfully.',
+            data: [
+                'summary' => $summary,
             ]
         );
     }

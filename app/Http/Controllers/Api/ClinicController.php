@@ -141,4 +141,20 @@ class ClinicController extends Controller
             ]
         );
     }
+
+    public function workingHours(
+        ClinicService $clinicService,
+        int $clinicId
+    ): JsonResponse {
+        $clinic = $clinicService->getWorkingHours(
+            $clinicId
+        );
+
+        return ApiResponse::success(
+            message: 'Clinic working hours retrieved successfully.',
+            data: [
+                'clinic' => $clinic,
+            ]
+        );
+    }
 }

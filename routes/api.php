@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\Auth\DoctorAuthController;
 use App\Http\Controllers\Api\ClinicController;
+use App\Http\Controllers\Api\DoctorDashboardController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\QueueController;
 use Illuminate\Support\Facades\Route;
@@ -46,14 +47,24 @@ Route::middleware(['auth:sanctum', 'doctor.tenant',])->prefix('doctor')->group(f
     Route::post('appointments', [AppointmentController::class, 'store']);
     Route::get('appointments', [AppointmentController::class, 'index']);
     Route::get('appointments/availability', [AppointmentController::class, 'availability']);
+    Route::get('appointments/slots',[AppointmentController::class, 'slots']);
+    Route::get('appointments/upcoming',[AppointmentController::class, 'upcoming']);
+    Route::get('appointments/dashboard-summary',[AppointmentController::class, 'dashboardSummary']);
+    Route::post('appointments/book', [AppointmentController::class, 'bookForPatient']);
+    Route::patch('appointments/{appointmentId}/reschedule',[AppointmentController::class, 'reschedule']);
     Route::get('appointments/{appointmentId}', [AppointmentController::class, 'show']);
     Route::put('appointments/{appointmentId}', [AppointmentController::class, 'update']);
     Route::delete('appointments/{appointmentId}', [AppointmentController::class, 'destroy']);
     Route::patch('appointments/{appointmentId}/status', [AppointmentController::class, 'updateStatus']);
     Route::post('appointments/{appointmentId}/arrive', [AppointmentController::class, 'arrive']);
-    Route::post('appointments/book', [AppointmentController::class, 'bookForPatient']);
+
 
     Route::put('clinics/{clinicId}/working-hours',[ClinicController::class, 'updateWorkingHours']);
+    Route::get('clinics/{clinicId}/working-hours',[ClinicController::class, 'workingHours']);
+    Route::get('clinics/{clinicId}',[ClinicController::class, 'show']);
+    
+
+    Route::get('dashboard/summary',[DoctorDashboardController::class, 'summary']);
 
 
 
