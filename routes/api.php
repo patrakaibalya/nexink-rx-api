@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\Auth\DoctorAuthController;
+use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\DoctorDashboardController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\QueueController;
+use App\Http\Controllers\Api\VisitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -62,9 +64,19 @@ Route::middleware(['auth:sanctum', 'doctor.tenant',])->prefix('doctor')->group(f
     Route::put('clinics/{clinicId}/working-hours',[ClinicController::class, 'updateWorkingHours']);
     Route::get('clinics/{clinicId}/working-hours',[ClinicController::class, 'workingHours']);
     Route::get('clinics/{clinicId}',[ClinicController::class, 'show']);
-    
 
     Route::get('dashboard/summary',[DoctorDashboardController::class, 'summary']);
+
+    Route::post('visits/start',[VisitController::class, 'start']);
+    Route::post('visits/direct',[VisitController::class, 'direct']);//Emergency
+    Route::patch('visits/{visitId}/complete',[VisitController::class, 'complete']);
+    Route::get('visits/{visitId}',[VisitController::class, 'show']);
+    Route::patch('visits/{visitId}',[VisitController::class, 'update']);
+
+
+    Route::post('visits/{visitId}/clinical-extraction',[ClinicalExtractionController::class, 'store']);
+    Route::get('visits/{visitId}/clinical-extraction',[ClinicalExtractionController::class, 'show']);
+    Route::post('visits/{visitId}/clinical-extraction/confirm',[ClinicalExtractionController::class, 'confirm']);
 
 
 
