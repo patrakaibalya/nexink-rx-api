@@ -3,6 +3,8 @@
 namespace App\Services\ClinicalExtraction;
 
 use App\Models\ClinicalExtraction;
+use App\Models\Investigation;
+use App\Models\Prescription;
 use App\Models\Visit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -119,6 +121,77 @@ class ClinicalExtractionService
                         'diagnosis' => $diagnosis,
                     ]);
                 }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Create Prescription
+            |--------------------------------------------------------------------------
+            */
+
+                $medicines = $payload['medicines'] ?? [];
+
+                if (!empty($medicines)) {
+
+                    $prescription = Prescription::create([
+                        'clinic_id' => $extraction->clinic_id,
+                        'patient_id' => $extraction->patient_id,
+                        'visit_id' => $extraction->visit_id,
+                        'prescription_date' => now(
+                            $extraction->clinic->timezone
+                        )->toDateString(),
+                        'notes' => null,
+                        'status' => 'draft',
+                    ]);
+
+                    foreach ($medicines as $index => $medicine) {
+                        $prescription->items()->create([
+                            'medicine_name' => $medicine['name'],
+                            'dosage' => $medicine['dosage'] ?? null,
+                            'frequency' => $medicine['frequency'] ?? null,
+                            'duration' => $medicine['duration'] ?? null,
+                            'route' => $medicine['route'] ?? null,
+                            'instructions' => $medicine['instructions'] ?? null,
+                            'sort_order' => $index,
+                        ]);
+                    }
+                }
+
+                            /*
+            |--------------------------------------------------------------------------
+            | Create Investigation
+            |--------------------------------------------------------------------------
+            */
+
+                $investigations = $payload['investigations'] ?? [];
+
+                if (!empty($investigations)) {
+
+                    $investigation = Investigation::create([
+                        'clinic_id' => $extraction->clinic_id,
+                        'patient_id' => $extraction->patient_id,
+                        'visit_id' => $extraction->visit_id,
+                        'investigation_date' => now(
+                            $extraction->clinic->timezone
+                        )->toDateString(),
+                        'status' => 'ordered',
+                        'notes' => null,
+                    ]);
+
+                    foreach ($investigations as $index => $item) {
+                        $investigation->items()->create([
+                            'test_name' => $item['name'],
+                            'test_type' => $item['type'],
+                            'instructions' => $item['instructions'] ?? null,
+                            'sort_order' => $index,
+                        ]);
+                    }
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Confirm extraction
+            |--------------------------------------------------------------------------
+            */
 
                 $extraction->update([
                     'status' => 'confirmed',
