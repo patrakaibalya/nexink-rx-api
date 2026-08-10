@@ -73,5 +73,19 @@ class PrescriptionController extends Controller
         );
     }
 
-    
+    public function finalize(
+        PrescriptionService $prescriptionService,
+        int $prescriptionId
+    ): JsonResponse {
+        $prescription = $prescriptionService->finalize(
+            $prescriptionId
+        );
+
+        return ApiResponse::success(
+            message: 'Prescription finalized successfully.',
+            data: [
+                'prescription' => $prescription,
+            ]
+        );
+    }
 }

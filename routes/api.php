@@ -6,10 +6,13 @@ use App\Http\Controllers\Api\Auth\MasterAuthController;
 use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\DoctorDashboardController;
+use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
 use App\Http\Controllers\Api\InvestigationController;
+use App\Http\Controllers\Api\MedicineOrganizationAuthController;
 use App\Http\Controllers\Api\MedicineOrganizationController;
+use App\Http\Controllers\Api\MedicineOrganizationSubscriptionController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PrescriptionController;
@@ -18,13 +21,24 @@ use App\Http\Controllers\Api\VisitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
-    Route::post('doctor/register',[DoctorAuthController::class, 'register']);
-    Route::post('doctor/login',[DoctorAuthController::class, 'login']);
-    Route::post('master/login',[MasterAuthController::class, 'login']);
+    Route::post('doctor/register', [DoctorAuthController::class, 'register']);
+    Route::post('doctor/login', [DoctorAuthController::class, 'login']);
+    Route::post('master/login', [MasterAuthController::class, 'login']);
+    Route::post('medicine-organization/login', [MedicineOrganizationAuthController::class, 'login']);
+});
+
+//Medicine organization APIs
+Route::middleware([
+    'auth:sanctum',
+    'medicine_organizations',
+])->prefix('med')->group(function () {
+    Route::get('me', [MedicineOrganizationAuthController::class, 'me']);
+    Route::post('logout', [MedicineOrganizationAuthController::class, 'logout']);
+    Route::get('subscription-requests',[MedicineOrganizationSubscriptionController::class,'index']);
+    Route::patch('subscription-requests/{subscriptionId}',[MedicineOrganizationSubscriptionController::class,'update']);
 });
 
 // Master database APIs
-
 Route::middleware([
     'auth:sanctum',
     'master_admins',
@@ -116,6 +130,7 @@ Route::middleware([
     Route::patch('prescriptions/{prescriptionId}', [PrescriptionController::class, 'update']);
     Route::delete('prescriptions/{prescriptionId}', [PrescriptionController::class, 'destroy']);
     Route::get('prescriptions', [PrescriptionController::class, 'index']);
+    Route::post('prescriptions/{prescriptionId}/finalize',[PrescriptionController::class,'finalize']);
 
     Route::get('investigations/{investigationId}', [InvestigationController::class, 'show']);
     Route::patch('investigations/{investigationId}', [InvestigationController::class, 'update']);
@@ -126,7 +141,9 @@ Route::middleware([
     Route::post('medicine-organizations/{organizationId}/subscribe', [DoctorMedicineOrganizationController::class, 'subscribe']);
     Route::patch('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'update']);
     Route::delete('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'destroy']);
+    Route::patch('medicine-organizations/{organizationId}/favorite',[DoctorMedicineOrganizationController::class,'favorite']);
 
+    Route::get('my-medicine-library',[DoctorMedicineLibraryController::class,'index']);
 
 
     Route::post('logout', [DoctorAuthController::class, 'logout']);

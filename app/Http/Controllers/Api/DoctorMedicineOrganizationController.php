@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Doctor\MedicineOrganizationFavoriteRequest;
 use App\Http\Requests\Doctor\MedicineOrganizationSubscriptionRequest;
 use App\Models\DoctorMedicineSubscription;
 use App\Models\MedicineOrganization;
@@ -135,6 +136,44 @@ class DoctorMedicineOrganizationController extends Controller
 
         return ApiResponse::success(
             message: 'Medicine organization subscription cancelled successfully.',
+        );
+    }
+
+    public function favorite(
+        MedicineOrganizationFavoriteRequest $request,
+        int $organizationId
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $subscription = DoctorMedicineSubscription::query()
+            ->where('doctor_id', $doctor->id)
+            ->where('organization_id', $organizationId)
+            ->where('status', 'approved')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->first();
+
+        if (!$subscription) {
+            return ApiResponse::notFound(
+                'Approved medicine organization subscription not found.'
+            );
+        }
+
+        $subscription->update([
+            'is_favorite' => $request->validated('is_favorite'),
+        ]);
+
+        return ApiResponse::success(
+            message: $subscription->is_favorite
+                ? 'Medicine organization added to favorites.'
+                : 'Medicine organization removed from favorites.',
+            data: [
+                'subscription' => $subscription->fresh(
+                    'organization'
+                ),
+            ]
         );
     }
 }

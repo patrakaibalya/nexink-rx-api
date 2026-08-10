@@ -57,13 +57,18 @@ class PrescriptionService
                     ]);
                 }
 
+                if ($prescription->status === 'final') {
+                    throw ValidationException::withMessages([
+                        'prescription' => [
+                            'A finalized prescription cannot be updated.',
+                        ],
+                    ]);
+                }
+
                 $prescription->update([
                     'notes' => array_key_exists('notes', $data)
                         ? $data['notes']
                         : $prescription->notes,
-
-                    'status' => $data['status']
-                        ?? $prescription->status,
                 ]);
 
                 if (array_key_exists('items', $data)) {
@@ -153,5 +158,59 @@ class PrescriptionService
         );
     }
 
+    public function finalize(int $prescriptionId): Prescription
+    {
+        return DB::connection('doctor')->transaction(
+            function () use ($prescriptionId) {
 
+                $prescription = Prescription::query()
+                    ->lockForUpdate()
+                    ->with('items')
+                    ->find($prescriptionId);
+
+                if (!$prescription) {
+                    throw ValidationException::withMessages([
+                        'prescription_id' => [
+                            'Prescription not found.',
+                        ],
+                    ]);
+                }
+
+                if ($prescription->status === 'final') {
+                    throw ValidationException::withMessages([
+                        'prescription' => [
+                            'Prescription is already finalized.',
+                        ],
+                    ]);
+                }
+
+                if ($prescription->status === 'cancelled') {
+                    throw ValidationException::withMessages([
+                        'prescription' => [
+                            'A cancelled prescription cannot be finalized.',
+                        ],
+                    ]);
+                }
+
+                if ($prescription->items->isEmpty()) {
+                    throw ValidationException::withMessages([
+                        'items' => [
+                            'A prescription must contain at least one medicine before finalization.',
+                        ],
+                    ]);
+                }
+
+                $prescription->update([
+                    'status' => 'final',
+                ]);
+
+                return $prescription->fresh([
+                    'clinic',
+                    'patient',
+                    'visit',
+                    'items',
+                ]);
+            }
+        );
+    }
 }
