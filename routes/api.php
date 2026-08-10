@@ -5,7 +5,9 @@ use App\Http\Controllers\Api\Auth\DoctorAuthController;
 use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\DoctorDashboardController;
+use App\Http\Controllers\Api\InvestigationController;
 use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\PrescriptionController;
 use App\Http\Controllers\Api\QueueController;
 use App\Http\Controllers\Api\VisitController;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +32,7 @@ Route::middleware(['auth:sanctum', 'doctor.tenant',])->prefix('doctor')->group(f
     Route::get('patients/{patient}', [PatientController::class, 'show']);
     Route::put('patients/{patientId}', [PatientController::class, 'update']);
     Route::delete('patients/{patientId}', [PatientController::class, 'destroy']);
+    Route::get('patients/{patientId}/clinical-history',[PatientController::class, 'clinicalHistory']);
 
     Route::get('clinics', [ClinicController::class, 'index']);
     Route::post('clinics', [ClinicController::class, 'store']);
@@ -78,6 +81,16 @@ Route::middleware(['auth:sanctum', 'doctor.tenant',])->prefix('doctor')->group(f
     Route::get('visits/{visitId}/clinical-extraction',[ClinicalExtractionController::class, 'show']);
     Route::post('visits/{visitId}/clinical-extraction/confirm',[ClinicalExtractionController::class, 'confirm']);
     Route::post('visits/{visitId}/clinical-extraction/reject',[ClinicalExtractionController::class, 'reject']);
+
+    Route::get('prescriptions/{prescriptionId}',[PrescriptionController::class, 'show']);
+    Route::patch('prescriptions/{prescriptionId}',[PrescriptionController::class, 'update']);
+    Route::delete('prescriptions/{prescriptionId}',[PrescriptionController::class, 'destroy']);
+    Route::get('prescriptions',[PrescriptionController::class, 'index']);
+
+    Route::get('investigations/{investigationId}',[InvestigationController::class, 'show']);
+    Route::patch('investigations/{investigationId}',[InvestigationController::class, 'update']);
+    Route::delete('investigations/{investigationId}',[InvestigationController::class, 'destroy']);
+    Route::get('investigations',[InvestigationController::class, 'index']);
 
 
 

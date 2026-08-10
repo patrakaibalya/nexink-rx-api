@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Patient\ClinicalHistoryRequest;
 use App\Http\Requests\Patient\PatientStoreRequest;
 use App\Models\Patient;
 use App\Support\ApiResponse;
@@ -94,6 +95,42 @@ class PatientController extends Controller
 
         return ApiResponse::success(
             message: 'Patient deleted successfully.'
+        );
+    }
+
+    public function clinicalHistory(
+        ClinicalHistoryRequest $request,
+        int $patientId
+    ): JsonResponse {
+        $patient = Patient::query()
+            ->with([
+                'visits' => function ($query) {
+                    $query->latest('id');
+                },
+                'prescriptions' => function ($query) {
+                    $query
+                        ->with('items')
+                        ->latest('id');
+                },
+                'investigations' => function ($query) {
+                    $query
+                        ->with('items')
+                        ->latest('id');
+                },
+            ])
+            ->find($patientId);
+
+        if (!$patient) {
+            return ApiResponse::notFound(
+                'Patient not found.'
+            );
+        }
+
+        return ApiResponse::success(
+            message: 'Patient clinical history retrieved successfully.',
+            data: [
+                'patient' => $patient,
+            ]
         );
     }
 }
