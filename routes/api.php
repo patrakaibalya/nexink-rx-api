@@ -21,10 +21,15 @@ use App\Http\Controllers\Api\VisitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
-    Route::post('doctor/register', [DoctorAuthController::class, 'register']);//Android & iOS App
-    Route::post('doctor/login', [DoctorAuthController::class, 'login']);//Android & iOS App
-    Route::post('master/login', [MasterAuthController::class, 'login']);//Angular Web App
-    Route::post('medicine-organization/login', [MedicineOrganizationAuthController::class, 'login']);//Angular Web App
+
+    Route::post('doctor/register', [DoctorAuthController::class, 'register']); //Android & iOS App
+    Route::post('doctor/login', [DoctorAuthController::class, 'login']); //Android & iOS App
+
+
+    Route::post('medicine-organization/register', [MedicineOrganizationAuthController::class, 'register']); //Angular Web App
+    Route::post('medicine-organization/login', [MedicineOrganizationAuthController::class, 'login']); //Angular Web App
+
+    Route::post('master/login', [MasterAuthController::class, 'login']); //Angular Web App
 });
 
 //Medicine organization APIs
@@ -34,8 +39,8 @@ Route::middleware([
 ])->prefix('med')->group(function () {
     Route::get('me', [MedicineOrganizationAuthController::class, 'me']);
     Route::post('logout', [MedicineOrganizationAuthController::class, 'logout']);
-    Route::get('subscription-requests',[MedicineOrganizationSubscriptionController::class,'index']);
-    Route::patch('subscription-requests/{subscriptionId}',[MedicineOrganizationSubscriptionController::class,'update']);
+    Route::get('subscription-requests', [MedicineOrganizationSubscriptionController::class, 'index']);
+    Route::patch('subscription-requests/{subscriptionId}', [MedicineOrganizationSubscriptionController::class, 'update']);
 });
 
 // Master database APIs
@@ -71,8 +76,8 @@ Route::middleware([
 ])->prefix('doctor')->group(function () {
 
     Route::get('me', [DoctorAuthController::class, 'me']);
-    Route::patch('me',[DoctorAuthController::class, 'updateProfile']);
-    Route::patch('password',[DoctorAuthController::class, 'changePassword']);
+    Route::patch('me', [DoctorAuthController::class, 'updateProfile']);
+    Route::patch('password', [DoctorAuthController::class, 'changePassword']);
 
     Route::get('patients', [PatientController::class, 'index']);
     Route::post('patients', [PatientController::class, 'store']);
@@ -133,21 +138,21 @@ Route::middleware([
     Route::patch('prescriptions/{prescriptionId}', [PrescriptionController::class, 'update']);
     Route::delete('prescriptions/{prescriptionId}', [PrescriptionController::class, 'destroy']);
     Route::get('prescriptions', [PrescriptionController::class, 'index']);
-    Route::post('prescriptions/{prescriptionId}/finalize',[PrescriptionController::class,'finalize']);
+    Route::post('prescriptions/{prescriptionId}/finalize', [PrescriptionController::class, 'finalize']);
 
     Route::get('investigations/{investigationId}', [InvestigationController::class, 'show']);
     Route::patch('investigations/{investigationId}', [InvestigationController::class, 'update']);
     Route::delete('investigations/{investigationId}', [InvestigationController::class, 'destroy']);
     Route::get('investigations', [InvestigationController::class, 'index']);
-    Route::post('investigations/{investigationId}/complete',[InvestigationController::class,'complete']);
+    Route::post('investigations/{investigationId}/complete', [InvestigationController::class, 'complete']);
 
     Route::get('medicine-organizations', [DoctorMedicineOrganizationController::class, 'index']);
     Route::post('medicine-organizations/{organizationId}/subscribe', [DoctorMedicineOrganizationController::class, 'subscribe']);
     Route::patch('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'update']);
     Route::delete('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'destroy']);
-    Route::patch('medicine-organizations/{organizationId}/favorite',[DoctorMedicineOrganizationController::class,'favorite']);
+    Route::patch('medicine-organizations/{organizationId}/favorite', [DoctorMedicineOrganizationController::class, 'favorite']);
 
-    Route::get('my-medicine-library',[DoctorMedicineLibraryController::class,'index']);
+    Route::get('my-medicine-library', [DoctorMedicineLibraryController::class, 'index']);
 
 
     Route::post('logout', [DoctorAuthController::class, 'logout']);

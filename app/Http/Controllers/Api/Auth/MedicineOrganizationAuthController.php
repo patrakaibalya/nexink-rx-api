@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\MedicineOrganizationLoginRequest;
+use App\Http\Requests\Auth\MedicineOrganizationRegisterRequest;
 use App\Services\Auth\MedicineOrganizationAuthService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,22 @@ class MedicineOrganizationAuthController extends Controller
 
         return ApiResponse::success(
             message: 'Medicine organization logout successful.'
+        );
+    }
+
+    public function register(
+        MedicineOrganizationRegisterRequest $request,
+        MedicineOrganizationAuthService $medicineOrganizationAuthService
+    ): JsonResponse {
+        $organization = $medicineOrganizationAuthService->register(
+            $request
+        );
+
+        return ApiResponse::created(
+            message: 'Medicine organization registered successfully.',
+            data: [
+                'organization' => $organization,
+            ]
         );
     }
 }

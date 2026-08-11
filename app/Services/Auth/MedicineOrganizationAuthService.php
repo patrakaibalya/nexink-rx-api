@@ -2,12 +2,26 @@
 
 namespace App\Services\Auth;
 
+use App\Http\Requests\Auth\MedicineOrganizationRegisterRequest;
 use App\Models\MedicineOrganization;
+use App\Services\Medicine\MedicineLibraryProvisioningService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class MedicineOrganizationAuthService
 {
+
+    protected MedicineLibraryProvisioningService $medicineLibraryProvisioningService;
+
+    public function __construct(
+        MedicineLibraryProvisioningService $medicineLibraryProvisioningService
+    ) {
+        $this->medicineLibraryProvisioningService =
+            $medicineLibraryProvisioningService;
+    }
+
+
+
     public function login(array $data): array
     {
         $organization = MedicineOrganization::query()
@@ -48,5 +62,40 @@ class MedicineOrganizationAuthService
             'organization' => $organization->fresh(),
             'token' => $token,
         ];
+    }
+
+    public function register(
+        MedicineOrganizationRegisterRequest $request
+    ): MedicineOrganization {
+        $organization = MedicineOrganization::create([
+            'organization_name' => $request->validated(
+                'organization_name'
+            ),
+
+            'email' => $request->validated('email'),
+
+            'mobile' => $request->validated('mobile'),
+
+            'contact_person' => $request->validated(
+                'contact_person'
+            ),
+
+            'address' => $request->validated('address'),
+
+            'password' => Hash::make(
+                $request->validated('password')
+            ),
+        ]);
+
+        try {
+            $this->medicineLibraryProvisioningService
+                ->createForOrganization($organization->id);
+        } catch (\Throwable $exception) {
+            $organization->delete();
+
+            throw $exception;
+        }
+
+        return $organization->fresh();
     }
 }

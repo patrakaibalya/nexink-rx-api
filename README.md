@@ -39,7 +39,7 @@ DB::purge('doctor');
 DB::reconnect('doctor');
 
 ## command 
-
+cd /var/www/nexink-rx-api
 - php artisan migrate:fresh
 -   php artisan optimize:clear
     php artisan route:clear
@@ -47,3 +47,24 @@ DB::reconnect('doctor');
     php artisan cache:clear
     php artisan route:list
     php artisan serve
+
+
+- sudo chown -R ubuntu:www-data storage bootstrap/cache
+- sudo chmod -R 775 storage bootstrap/cache
+- sudo nano /etc/nginx/sites-available/nexink-rx-api
+- sudo ln -s /etc/nginx/sites-available/nexink-rx-api /etc/nginx/sites-enabled/nexink-rx-api
+- sudo rm /etc/nginx/sites-enabled/default
+- sudo nginx -t
+- sudo systemctl restart nginx
+- sudo systemctl status nginx
+- check local public ip for AWS in terminal ->curl https://checkip.amazonaws.com
+
+
+## Truncate
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE nexink_master.doctor_databases;
+TRUNCATE TABLE nexink_master.doctor_accounts;
+
+SET FOREIGN_KEY_CHECKS = 1;
