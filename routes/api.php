@@ -21,10 +21,10 @@ use App\Http\Controllers\Api\VisitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
-    Route::post('doctor/register', [DoctorAuthController::class, 'register']);
-    Route::post('doctor/login', [DoctorAuthController::class, 'login']);
-    Route::post('master/login', [MasterAuthController::class, 'login']);
-    Route::post('medicine-organization/login', [MedicineOrganizationAuthController::class, 'login']);
+    Route::post('doctor/register', [DoctorAuthController::class, 'register']);//Android & iOS App
+    Route::post('doctor/login', [DoctorAuthController::class, 'login']);//Android & iOS App
+    Route::post('master/login', [MasterAuthController::class, 'login']);//Angular Web App
+    Route::post('medicine-organization/login', [MedicineOrganizationAuthController::class, 'login']);//Angular Web App
 });
 
 //Medicine organization APIs
