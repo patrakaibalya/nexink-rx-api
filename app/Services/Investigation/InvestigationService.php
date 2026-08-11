@@ -149,4 +149,83 @@ class InvestigationService
             $filters['per_page'] ?? 20
         );
     }
+
+    public function complete(
+        int $investigationId,
+        array $data
+    ): Investigation {
+        return DB::connection('doctor')->transaction(
+            function () use ($investigationId, $data) {
+
+                $investigation = Investigation::query()
+                    ->lockForUpdate()
+                    ->with('items')
+                    ->find($investigationId);
+
+                if (!$investigation) {
+                    throw ValidationException::withMessages([
+                        'investigation_id' => [
+                            'Investigation not found.',
+                        ],
+                    ]);
+                }
+
+                if ($investigation->status === 'cancelled') {
+                    throw ValidationException::withMessages([
+                        'investigation' => [
+                            'A cancelled investigation cannot be completed.',
+                        ],
+                    ]);
+                }
+
+                if ($investigation->status === 'completed') {
+                    throw ValidationException::withMessages([
+                        'investigation' => [
+                            'Investigation is already completed.',
+                        ],
+                    ]);
+                }
+
+                if ($investigation->items->isEmpty()) {
+                    throw ValidationException::withMessages([
+                        'items' => [
+                            'An investigation must contain at least one test before completion.',
+                        ],
+                    ]);
+                }
+
+                foreach ($data['items'] as $itemData) {
+                    $item = $investigation->items()
+                        ->where('id', $itemData['id'])
+                        ->first();
+
+                    if (!$item) {
+                        throw ValidationException::withMessages([
+                            'items' => [
+                                'Investigation item does not belong to this investigation.',
+                            ],
+                        ]);
+                    }
+
+                    $item->update([
+                        'result' => $itemData['result'] ?? null,
+                        'result_unit' => $itemData['result_unit'] ?? null,
+                        'reference_range' => $itemData['reference_range'] ?? null,
+                        'result_notes' => $itemData['result_notes'] ?? null,
+                    ]);
+                }
+
+                $investigation->update([
+                    'status' => 'completed',
+                ]);
+
+                return $investigation->fresh([
+                    'clinic',
+                    'patient',
+                    'visit',
+                    'items',
+                ]);
+            }
+        );
+    }
 }

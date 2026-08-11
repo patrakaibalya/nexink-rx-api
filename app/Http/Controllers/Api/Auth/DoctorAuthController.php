@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\DoctorLoginRequest;
 use App\Http\Requests\Auth\DoctorRegisterRequest;
+use App\Http\Requests\Doctor\DoctorChangePasswordRequest;
+use App\Http\Requests\Doctor\DoctorProfileUpdateRequest;
 use App\Services\Auth\DoctorAuthService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class DoctorAuthController extends Controller
 {
@@ -91,6 +94,39 @@ class DoctorAuthController extends Controller
 
         return ApiResponse::success(
             message: 'Doctor logged out successfully.'
+        );
+    }
+
+    public function updateProfile(
+        DoctorProfileUpdateRequest $request
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $doctor->update(
+            $request->validated()
+        );
+
+        return ApiResponse::success(
+            message: 'Doctor profile updated successfully.',
+            data: [
+                'doctor' => $doctor->fresh(),
+            ]
+        );
+    }
+
+    public function changePassword(
+        DoctorChangePasswordRequest $request
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $doctor->update([
+            'password' => Hash::make(
+                $request->validated('password')
+            ),
+        ]);
+
+        return ApiResponse::success(
+            message: 'Doctor password changed successfully.'
         );
     }
 }

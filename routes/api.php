@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\Auth\DoctorAuthController;
 use App\Http\Controllers\Api\Auth\MasterAuthController;
+use App\Http\Controllers\Api\Auth\MedicineOrganizationAuthController;
 use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\DoctorDashboardController;
@@ -10,7 +11,6 @@ use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
 use App\Http\Controllers\Api\InvestigationController;
-use App\Http\Controllers\Api\MedicineOrganizationAuthController;
 use App\Http\Controllers\Api\MedicineOrganizationController;
 use App\Http\Controllers\Api\MedicineOrganizationSubscriptionController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
@@ -71,6 +71,9 @@ Route::middleware([
 ])->prefix('doctor')->group(function () {
 
     Route::get('me', [DoctorAuthController::class, 'me']);
+    Route::patch('me',[DoctorAuthController::class, 'updateProfile']);
+    Route::patch('password',[DoctorAuthController::class, 'changePassword']);
+
     Route::get('patients', [PatientController::class, 'index']);
     Route::post('patients', [PatientController::class, 'store']);
     Route::get('patients/{patient}', [PatientController::class, 'show']);
@@ -136,6 +139,7 @@ Route::middleware([
     Route::patch('investigations/{investigationId}', [InvestigationController::class, 'update']);
     Route::delete('investigations/{investigationId}', [InvestigationController::class, 'destroy']);
     Route::get('investigations', [InvestigationController::class, 'index']);
+    Route::post('investigations/{investigationId}/complete',[InvestigationController::class,'complete']);
 
     Route::get('medicine-organizations', [DoctorMedicineOrganizationController::class, 'index']);
     Route::post('medicine-organizations/{organizationId}/subscribe', [DoctorMedicineOrganizationController::class, 'subscribe']);

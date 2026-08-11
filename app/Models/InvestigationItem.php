@@ -17,6 +17,10 @@ class InvestigationItem extends Model
         'test_name',
         'test_type',
         'instructions',
+        'result',
+        'result_unit',
+        'reference_range',
+        'result_notes',
         'sort_order',
     ];
 

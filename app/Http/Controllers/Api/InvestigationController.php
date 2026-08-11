@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Investigation\InvestigationCompleteRequest;
 use App\Http\Requests\Investigation\InvestigationIndexRequest;
 use App\Http\Requests\Investigation\InvestigationUpdateRequest;
 use App\Services\Investigation\InvestigationService;
@@ -69,6 +70,24 @@ class InvestigationController extends Controller
             message: 'Investigations retrieved successfully.',
             data: [
                 'investigations' => $investigations,
+            ]
+        );
+    }
+
+    public function complete(
+        InvestigationCompleteRequest $request,
+        InvestigationService $investigationService,
+        int $investigationId
+    ): JsonResponse {
+        $investigation = $investigationService->complete(
+            $investigationId,
+            $request->validated()
+        );
+
+        return ApiResponse::success(
+            message: 'Investigation completed successfully.',
+            data: [
+                'investigation' => $investigation,
             ]
         );
     }
