@@ -68,3 +68,7 @@ TRUNCATE TABLE nexink_master.doctor_databases;
 TRUNCATE TABLE nexink_master.doctor_accounts;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+
+## git pull
+ubuntu@ip-172-31-12-116:/var/www/nexink-rx-api$ 

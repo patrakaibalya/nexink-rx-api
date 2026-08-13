@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Doctor\MedicineLibraryRequest;
 use App\Models\DoctorMedicineSubscription;
+use App\Models\GlobalMedicineLibrary;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +63,82 @@ class DoctorMedicineLibraryController extends Controller
 
         $medicines = collect();
 
+
+        /*
+    |--------------------------------------------------------------------------
+    | Global Medicine Library
+    |--------------------------------------------------------------------------
+    |
+    | Global medicines are available to every doctor.
+    |
+    */
+
+        $globalQuery = GlobalMedicineLibrary::query()
+            ->where('is_active', true);
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Medicine Search
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('search')) {
+            $search = $request
+                ->string('search')
+                ->toString();
+
+            $globalQuery->where(function ($query) use ($search) {
+                $query
+                    ->where(
+                        'medicine_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'generic_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'manufacturer',
+                        'like',
+                        "%{$search}%"
+                    );
+            });
+        }
+
+
+        $globalMedicines = $globalQuery
+            ->orderBy('medicine_name')
+            ->get();
+
+
+        foreach ($globalMedicines as $medicine) {
+            $medicines->push([
+                'id' => $medicine->id,
+                'medicine_name' => $medicine->medicine_name,
+                'generic_name' => $medicine->generic_name,
+                'composition' => $medicine->composition,
+                'strength' => $medicine->strength,
+                'dosage_form' => $medicine->dosage_form,
+                'manufacturer' => $medicine->manufacturer,
+                'description' => $medicine->description,
+                'is_active' => (bool) $medicine->is_active,
+
+                'source' => 'global',
+
+                'organization' => null,
+            ]);
+        }
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Organization Medicine Libraries
+    |--------------------------------------------------------------------------
+    */
+
         foreach ($subscriptions as $subscription) {
             $tableName = 'medicine_library_' . $subscription->organization_id;
 
@@ -73,10 +150,10 @@ class DoctorMedicineLibraryController extends Controller
                 ->where('is_active', true);
 
             /*
-        |--------------------------------------------------------------------------
-        | Medicine Search
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Medicine Search
+    |--------------------------------------------------------------------------
+    */
 
             if ($request->filled('search')) {
                 $search = $request
@@ -119,12 +196,12 @@ class DoctorMedicineLibraryController extends Controller
                     'description' => $medicine->description,
                     'is_active' => (bool) $medicine->is_active,
 
+                    'source' => 'organization',
+
                     'organization' => [
                         'id' => $subscription->organization->id,
                         'organization_name' =>
-                        $subscription
-                            ->organization
-                            ->organization_name,
+                        $subscription->organization->organization_name,
                         'is_favorite' => (bool) $subscription->is_favorite,
                     ],
                 ]);
