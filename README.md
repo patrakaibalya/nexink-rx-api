@@ -72,3 +72,130 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 ## git pull
 ubuntu@ip-172-31-12-116:/var/www/nexink-rx-api$ 
+
+## Full Doctor Flow
+
+┌─────────────────────────────┐
+│ 1. Doctor Login             │
+│ POST /auth/doctor/login     │
+└──────────────┬──────────────┘
+               ↓
+┌─────────────────────────────┐
+│ 2. Doctor Dashboard / Home  │
+│ GET dashboard data          │
+└──────────────┬──────────────┘
+               ↓
+┌─────────────────────────────┐
+│ 3. Patient Management       │
+│ Search existing patient     │
+│ OR create new patient       │
+└──────────────┬──────────────┘
+               ↓
+        Is patient new?
+          ┌────┴────┐
+         YES       NO
+          ↓         ↓
+ POST /patients   Select Patient
+          └────┬────┘
+               ↓
+        ┌──────────────────┐
+        │ How did patient  │
+        │ come to doctor?  │
+        └────────┬─────────┘
+                 │
+        ┌────────┴─────────┐
+        ↓                  ↓
+┌───────────────┐   ┌────────────────┐
+│ WALK-IN NOW   │   │ SCHEDULED       │
+│ Patient here  │   │ Patient booking │
+└───────┬───────┘   └────────┬───────┘
+        ↓                    ↓
+ POST /queues         POST /appointments
+        ↓                    ↓
+ Waiting in Queue       Appointment Created
+        ↓                    ↓
+ Queue Status          Wait until appointment
+ changes                      date/time
+        ↓                    ↓
+ Called / Ready             Check-in
+        ↓                    ↓
+        └──────────┬─────────┘
+                   ↓
+        ┌─────────────────────┐
+        │ 4. Start Visit      │
+        │ / Consultation      │
+        └──────────┬──────────┘
+                   ↓
+        ┌─────────────────────┐
+        │ 5. Consultation     │
+        │ Doctor examines     │
+        │ patient             │
+        └──────────┬──────────┘
+                   ↓
+         ┌─────────┴──────────┐
+         ↓                    ↓
+┌─────────────────┐  ┌──────────────────┐
+│ Prescription    │  │ Investigation    │
+│ Medicines       │  │ Lab / Tests      │
+└────────┬────────┘  └────────┬─────────┘
+         ↓                    ↓
+ Add Medicine           Add Test Items
+         ↓                    ↓
+ Save / Update           Save / Update
+         ↓                    ↓
+ Finalize                Order Investigation
+         └─────────┬──────────┘
+                   ↓
+        ┌─────────────────────┐
+        │ 6. Consultation     │
+        │ Completed           │
+        └─────────────────────┘
+
+## Complete End-to-End Flow
+
+                        DOCTOR LOGIN
+                             ↓
+                        DASHBOARD
+                             ↓
+                     SEARCH PATIENT
+                             ↓
+                      Patient Found?
+                       ↙          ↘
+                     YES          NO
+                      ↓            ↓
+                 Select       CREATE PATIENT
+                                   ↓
+                    └──────────────┘
+                             ↓
+                   What does patient need?
+                             ↓
+              ┌──────────────┴──────────────┐
+              ↓                             ↓
+        WALK-IN NOW                    FUTURE BOOKING
+              ↓                             ↓
+        CREATE QUEUE                CREATE APPOINTMENT
+              ↓                             ↓
+          WAITING                     SCHEDULED
+              ↓                             ↓
+          CALLED                  Patient arrives
+              ↓                             ↓
+              │                       CREATE QUEUE
+              │                             ↓
+              └──────────────┬──────────────┘
+                             ↓
+                       CONSULTATION
+                             ↓
+                         CREATE VISIT
+                             ↓
+                  ┌──────────┴──────────┐
+                  ↓                     ↓
+             PRESCRIPTION          INVESTIGATION
+                  ↓                     ↓
+             Add Medicines          Add Tests
+                  ↓                     ↓
+                Update               Update
+                  ↓                     ↓
+              FINALIZE                ORDER
+                  └──────────┬──────────┘
+                             ↓
+                   CONSULTATION COMPLETE

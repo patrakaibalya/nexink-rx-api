@@ -99,7 +99,9 @@ class QueueService
 
                     'cancelled' => [],
 
-                    'no_show' => [],
+                    'no_show' => [
+                        'called',
+                    ],
                 ];
 
                 if (!in_array(
@@ -176,9 +178,7 @@ class QueueService
                     ->first();
 
                 if (!$queue) {
-                    throw ValidationException::withMessages([
-                        'queue' => ['No waiting patients in the queue.'],
-                    ]);
+                    return null;
                 }
 
                 $queue->update([
