@@ -178,7 +178,9 @@ class QueueService
                     ->first();
 
                 if (!$queue) {
-                    return null;
+                    throw ValidationException::withMessages([
+                        'queue' => ['No waiting patients in the queue.'],
+                    ]);
                 }
 
                 $queue->update([

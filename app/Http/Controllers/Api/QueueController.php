@@ -105,15 +105,6 @@ class QueueController extends Controller
             $request->integer('clinic_id')
         );
 
-        if (!$queue) {
-            return ApiResponse::success(
-                message: 'No waiting patients in the queue.',
-                data: [
-                    'queue' => null,
-                ]
-            );
-        }
-
         return ApiResponse::success(
             message: 'Next patient called successfully.',
             data: [
