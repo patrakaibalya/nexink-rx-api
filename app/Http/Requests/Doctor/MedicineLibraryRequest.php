@@ -24,7 +24,7 @@ class MedicineLibraryRequest extends FormRequest
             }
         }
     }
-    
+
     public function authorize(): bool
     {
         return true;
@@ -48,6 +48,12 @@ class MedicineLibraryRequest extends FormRequest
             'favorites_only' => [
                 'nullable',
                 'boolean',
+            ],
+
+            'source' => [
+                'nullable',
+                'string',
+                'in:global,organization',
             ],
 
             'per_page' => [
