@@ -176,4 +176,27 @@ class DoctorMedicineOrganizationController extends Controller
             ]
         );
     }
+
+    public function allOrganizations(
+        Request $request
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $organizations = MedicineOrganization::query()
+            ->where('is_active', true)
+            ->with([
+                'subscriptions' => function ($query) use ($doctor) {
+                    $query->where('doctor_id', $doctor->id);
+                },
+            ])
+            ->latest('id')
+            ->paginate(20);
+
+        return ApiResponse::success(
+            message: 'Medicine organizations retrieved successfully.',
+            data: [
+                'organizations' => $organizations,
+            ]
+        );
+    }
 }

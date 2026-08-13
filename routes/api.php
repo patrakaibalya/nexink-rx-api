@@ -147,6 +147,7 @@ Route::middleware([
     Route::post('investigations/{investigationId}/complete', [InvestigationController::class, 'complete']);
 
     Route::get('medicine-organizations', [DoctorMedicineOrganizationController::class, 'index']);
+    Route::get('all-medicine-organizations',[DoctorMedicineOrganizationController::class, 'allOrganizations']);
     Route::post('medicine-organizations/{organizationId}/subscribe', [DoctorMedicineOrganizationController::class, 'subscribe']);
     Route::patch('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'update']);
     Route::delete('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'destroy']);
