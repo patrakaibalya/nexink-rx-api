@@ -38,6 +38,13 @@ return [
         'doctor_about_me_webhook' => env(
             'N8N_DOCTOR_ABOUT_ME_WEBHOOK'
         ),
+        'doctor_memory_search_webhook' => env(
+            'N8N_DOCTOR_MEMORY_SEARCH_WEBHOOK'
+        ),
+
+        'doctor_handwriting_correction_webhook' => env(
+            'N8N_DOCTOR_HANDWRITING_CORRECTION_WEBHOOK'
+        ),
     ],
 
 ];

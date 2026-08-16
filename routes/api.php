@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\DoctorAboutMeController;
 use App\Http\Controllers\Api\DoctorDashboardController;
+use App\Http\Controllers\Api\DoctorHandwritingCorrectionController;
 use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
@@ -83,6 +84,8 @@ Route::middleware([
     Route::get('about-me',[DoctorAboutMeController::class, 'index']);
     Route::post('about-me',[DoctorAboutMeController::class, 'store']);
     Route::put('about-me',[DoctorAboutMeController::class, 'update']);
+
+    Route::post('handwriting/correct',[DoctorHandwritingCorrectionController::class, 'correct']);
 
     Route::get('patients', [PatientController::class, 'index']);
     Route::post('patients', [PatientController::class, 'store']);
