@@ -199,3 +199,50 @@ ubuntu@ip-172-31-12-116:/var/www/nexink-rx-api$
                   └──────────┬──────────┘
                              ↓
                    CONSULTATION COMPLETE
+
+
+
+
+## Run this command in server 
+
+echo "========== MEMORY =========="
+free -h
+
+echo
+echo "========== CPU =========="
+nproc
+uptime
+lscpu | grep -E "CPU\(s\)|Model name"
+
+echo
+echo "========== DISK =========="
+df -h
+lsblk
+
+echo
+echo "========== TOP MEMORY PROCESSES =========="
+ps aux --sort=-%mem | head -15
+
+echo
+echo "========== TOP CPU PROCESSES =========="
+ps aux --sort=-%cpu | head -15
+
+echo
+echo "========== DOCKER =========="
+docker ps
+docker stats --no-stream
+
+echo
+echo "========== DOCKER DISK USAGE =========="
+docker system df
+
+echo
+echo "========== SYSTEMD FAILED SERVICES =========="
+systemctl --failed
+
+echo
+echo "========== RAM / DISK QUICK SUMMARY =========="
+echo "RAM:"
+free -h | grep Mem
+echo "Root Disk:"
+df -h /

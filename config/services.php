@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'n8n' => [
+        'doctor_about_me_webhook' => env(
+            'N8N_DOCTOR_ABOUT_ME_WEBHOOK'
+        ),
+    ],
 
 ];

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\MasterAuthController;
 use App\Http\Controllers\Api\Auth\MedicineOrganizationAuthController;
 use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
+use App\Http\Controllers\Api\DoctorAboutMeController;
 use App\Http\Controllers\Api\DoctorDashboardController;
 use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
@@ -79,6 +80,10 @@ Route::middleware([
     Route::patch('me', [DoctorAuthController::class, 'updateProfile']);
     Route::patch('password', [DoctorAuthController::class, 'changePassword']);
 
+    Route::get('about-me',[DoctorAboutMeController::class, 'index']);
+    Route::post('about-me',[DoctorAboutMeController::class, 'store']);
+    Route::put('about-me',[DoctorAboutMeController::class, 'update']);
+
     Route::get('patients', [PatientController::class, 'index']);
     Route::post('patients', [PatientController::class, 'store']);
     Route::get('patients/{patient}', [PatientController::class, 'show']);
@@ -147,7 +152,7 @@ Route::middleware([
     Route::post('investigations/{investigationId}/complete', [InvestigationController::class, 'complete']);
 
     Route::get('medicine-organizations', [DoctorMedicineOrganizationController::class, 'index']);
-    Route::get('all-medicine-organizations',[DoctorMedicineOrganizationController::class, 'allOrganizations']);
+    Route::get('all-medicine-organizations', [DoctorMedicineOrganizationController::class, 'allOrganizations']);
     Route::post('medicine-organizations/{organizationId}/subscribe', [DoctorMedicineOrganizationController::class, 'subscribe']);
     Route::patch('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'update']);
     Route::delete('medicine-organizations/{organizationId}/subscription', [DoctorMedicineOrganizationController::class, 'destroy']);
