@@ -2,15 +2,15 @@
 
 namespace App\Jobs;
 
-use App\Models\DoctorAboutMeSample;
 use App\Models\DoctorDatabase;
+use App\Models\DoctorHandwritingSample;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class ProcessDoctorAboutMeMemory implements ShouldQueue
+class ProcessDoctorHandwritingMemory implements ShouldQueue
 {
     use Queueable;
 
@@ -21,6 +21,12 @@ class ProcessDoctorAboutMeMemory implements ShouldQueue
 
     public function handle(): void
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Find Doctor Database
+        |--------------------------------------------------------------------------
+        */
+
         $doctorDatabase = DoctorDatabase::query()
             ->where('doctor_id', $this->doctorId)
             ->first();
@@ -66,18 +72,18 @@ class ProcessDoctorAboutMeMemory implements ShouldQueue
 
         /*
         |--------------------------------------------------------------------------
-        | Find About Me Sample
+        | Find Handwriting Sample
         |--------------------------------------------------------------------------
         */
 
-        $sample = DoctorAboutMeSample::query()
+        $sample = DoctorHandwritingSample::query()
             ->where('id', $this->sampleId)
             ->where('doctor_id', $this->doctorId)
             ->first();
 
         if (!$sample) {
             Log::warning(
-                'Doctor About Me sample not found.',
+                'Doctor handwriting sample not found.',
                 [
                     'doctor_id' => $this->doctorId,
                     'sample_id' => $this->sampleId,
@@ -87,32 +93,63 @@ class ProcessDoctorAboutMeMemory implements ShouldQueue
             return;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Mark Processing
+        |--------------------------------------------------------------------------
+        */
+
         $sample->update([
             'qdrant_status' => 'processing',
         ]);
 
         try {
+            /*
+            |--------------------------------------------------------------------------
+            | Get n8n Webhook
+            |--------------------------------------------------------------------------
+            */
+
             $webhookUrl = config(
-                'services.n8n.doctor_about_me_webhook'
+                'services.n8n.doctor_handwriting_memory_webhook'
             );
 
             if (!$webhookUrl) {
                 throw new \RuntimeException(
-                    'n8n Doctor About Me webhook URL is not configured.'
+                    'n8n Doctor Handwriting Memory webhook URL '
+                        . 'is not configured.'
                 );
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Send Handwriting Memory to n8n
+            |--------------------------------------------------------------------------
+            */
 
             $response = Http::post(
                 $webhookUrl,
                 [
                     'doctor_id' => $this->doctorId,
+
                     'sample_id' => $sample->id,
+
+                    'sample_type' =>
+                    $sample->sample_type,
+
+                    'prescription_id' => $sample->prescription_id,
+
                     'raw_recognized_text' =>
                     $sample->raw_recognized_text,
+
                     'final_corrected_text' =>
                     $sample->final_corrected_text,
-                    'memory_type' => 'doctor_handwriting',
-                    'source' => 'about_me',
+
+                    'memory_type' =>
+                    'doctor_handwriting',
+
+                    'source' =>
+                    $sample->sample_type,
                 ]
             );
 
@@ -123,19 +160,32 @@ class ProcessDoctorAboutMeMemory implements ShouldQueue
                 );
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Mark Completed
+            |--------------------------------------------------------------------------
+            */
+
             $sample->update([
                 'qdrant_status' => 'completed',
             ]);
         } catch (\Throwable $exception) {
+            /*
+            |--------------------------------------------------------------------------
+            | Mark Failed
+            |--------------------------------------------------------------------------
+            */
+
             $sample->update([
                 'qdrant_status' => 'failed',
             ]);
 
             Log::error(
-                'Doctor About Me memory processing failed.',
+                'Doctor handwriting memory processing failed.',
                 [
                     'doctor_id' => $this->doctorId,
                     'sample_id' => $this->sampleId,
+                    'sample_type' => $sample->sample_type,
                     'error' => $exception->getMessage(),
                 ]
             );

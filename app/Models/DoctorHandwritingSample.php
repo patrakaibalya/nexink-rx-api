@@ -5,16 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DoctorAboutMeSample extends Model
+class DoctorHandwritingSample extends Model
 {
     use HasFactory;
 
     protected $connection = 'doctor';
 
-    protected $table = 'doctor_about_me';
+    protected $table = 'doctor_handwriting_samples';
 
     protected $fillable = [
         'doctor_id',
+        'sample_type',
+        'prescription_id',
         'tool_data',
         'raw_recognized_text',
         'final_corrected_text',

@@ -6,9 +6,9 @@ use App\Http\Controllers\Api\Auth\MasterAuthController;
 use App\Http\Controllers\Api\Auth\MedicineOrganizationAuthController;
 use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
-use App\Http\Controllers\Api\DoctorAboutMeController;
 use App\Http\Controllers\Api\DoctorDashboardController;
 use App\Http\Controllers\Api\DoctorHandwritingCorrectionController;
+use App\Http\Controllers\Api\DoctorHandwritingSampleController;
 use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
@@ -81,9 +81,9 @@ Route::middleware([
     Route::patch('me', [DoctorAuthController::class, 'updateProfile']);
     Route::patch('password', [DoctorAuthController::class, 'changePassword']);
 
-    Route::get('about-me',[DoctorAboutMeController::class, 'index']);
-    Route::post('about-me',[DoctorAboutMeController::class, 'store']);
-    Route::put('about-me',[DoctorAboutMeController::class, 'update']);
+    Route::get('handwriting-samples',[DoctorHandwritingSampleController::class, 'index']);
+    Route::post('handwriting-samples',[DoctorHandwritingSampleController::class, 'store']);
+    Route::put('handwriting-samples',[DoctorHandwritingSampleController::class, 'update']);
 
     Route::post('handwriting/correct',[DoctorHandwritingCorrectionController::class, 'correct']);
 

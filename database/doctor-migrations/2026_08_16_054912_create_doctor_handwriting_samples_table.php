@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::connection('doctor')->create(
-            'doctor_about_me',
+            'doctor_handwriting_samples',
             function (Blueprint $table) {
                 $table->id();
 
@@ -22,15 +22,35 @@ return new class extends Migration
 
                 /*
                 |--------------------------------------------------------------------------
-                | Ink Tool Configuration
+                | Handwriting Sample Type
                 |--------------------------------------------------------------------------
                 |
-                | Android sends:
-                | color
-                | smoothing
-                | tool_type
-                | width
+                | Examples:
+                | about_me
+                | prescription
                 |
+                */
+                $table->string('sample_type');
+
+                /*
+                |--------------------------------------------------------------------------
+                | Related Prescription
+                |--------------------------------------------------------------------------
+                |
+                | NULL for About Me.
+                |
+                | Used only when:
+                | sample_type = prescription
+                |
+                */
+                $table->unsignedBigInteger(
+                    'prescription_id'
+                )->nullable();
+
+                /*
+                |--------------------------------------------------------------------------
+                | Ink Tool Configuration
+                |--------------------------------------------------------------------------
                 */
                 $table->json('tool_data')->nullable();
 
@@ -45,7 +65,7 @@ return new class extends Migration
 
                 /*
                 |--------------------------------------------------------------------------
-                | Doctor Approved Text
+                | Final Doctor Approved Text
                 |--------------------------------------------------------------------------
                 */
                 $table->longText(
@@ -57,10 +77,7 @@ return new class extends Migration
                 | Original Handwriting File
                 |--------------------------------------------------------------------------
                 |
-                | Example:
-                | about_me.ink.pb
-                |
-                | Store only the file path here.
+                | Store only the file path.
                 | Do NOT store the binary file in MySQL.
                 |
                 */
@@ -86,7 +103,22 @@ return new class extends Migration
                 */
                 $table->index('doctor_id');
 
+                $table->index('sample_type');
+
+                $table->index('prescription_id');
+
                 $table->index('qdrant_status');
+
+                /*
+                |--------------------------------------------------------------------------
+                | One About Me Sample Per Doctor
+                |--------------------------------------------------------------------------
+                |
+                | We will enforce this in the service query.
+                | Do not use a unique(doctor_id, sample_type) here because
+                | prescription allows multiple samples.
+                |
+                */
             }
         );
     }
@@ -94,7 +126,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::connection('doctor')->dropIfExists(
-            'doctor_about_me'
+            'doctor_handwriting_samples'
         );
     }
 };

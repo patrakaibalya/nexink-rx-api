@@ -4,7 +4,7 @@ namespace App\Http\Requests\Doctor;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreDoctorAboutMeRequest extends FormRequest
+class DoctorHandwritingSampleRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -27,6 +27,20 @@ class StoreDoctorAboutMeRequest extends FormRequest
             'final_corrected_text' => [
                 'nullable',
                 'string',
+            ],
+
+            'sample_type' => [
+                'required',
+                'string',
+                'in:about_me,prescription',
+            ],
+
+            'prescription_id' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'required_if:sample_type,prescription',
+                'prohibited_if:sample_type,about_me',
             ],
 
             'ink_file' => [

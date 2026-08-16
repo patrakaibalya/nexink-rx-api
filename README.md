@@ -200,7 +200,80 @@ ubuntu@ip-172-31-12-116:/var/www/nexink-rx-api$
                              ↓
                    CONSULTATION COMPLETE
 
+                 ABOUT ME
+                     │
+                     ▼
+              Doctor writes
+                     │
+                     ▼
+             Google ML Kit OCR
+                     │
+                     ▼
+           raw_recognized_text
+                     │
+                     ▼
+              Doctor corrects
+                     │
+                     ▼
+          final_corrected_text
+                     │
+                     ▼
+               Doctor approves
+                     │
+                     ▼
+        Save to MySQL + PB File
+                     │
+                     ▼
+       ProcessDoctorHandwritingMemory
+                     │
+                     ▼
+                   Qdrant
 
+                    
+
+                 PRESCRIPTION
+                     │
+                     ▼
+              Doctor writes
+                     │
+                     ▼
+             Google ML Kit OCR
+                     │
+                     ▼
+           raw_recognized_text
+                     │
+                     ▼
+              Review Screen
+                     │
+            ┌────────┴────────┐
+            │                 │
+            ▼                 ▼
+        Edit manually     Re-review
+            │                 │
+            │                 ▼
+            │          Memory Search
+            │                 │
+            │                 ▼
+            │          AI Correction
+            │                 │
+            └────────► corrected_text
+                          │
+                          ▼
+                    Doctor reviews
+                          │
+                   ┌──────┴──────┐
+                   │             │
+                   ▼             ▼
+                Reject         Approve
+                                 │
+                                 ▼
+                    Save PB + MySQL record
+                                 │
+                                 ▼
+                  ProcessDoctorHandwritingMemory
+                                 │
+                                 ▼
+                               Qdrant
 
 
 ## Run this command in server 
