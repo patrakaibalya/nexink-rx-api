@@ -135,4 +135,47 @@ class DoctorHandwritingSampleController extends Controller
             ]
         );
     }
+
+    public function file(
+        Request $request,
+        DoctorHandwritingSampleService $doctorHandwritingSampleService
+    ) {
+        $doctor = $request->user();
+
+        $data = Validator::make(
+            $request->query(),
+            [
+                'sample_type' => [
+                    'required',
+                    'string',
+                    'in:about_me,prescription',
+                ],
+
+                'prescription_id' => [
+                    'nullable',
+                    'integer',
+                    'min:1',
+                    'required_if:sample_type,prescription',
+                ],
+            ]
+        )->validate();
+
+        $sample = $doctorHandwritingSampleService->index(
+            doctorId: $doctor->id,
+            sampleType: $data['sample_type'],
+            prescriptionId: isset($data['prescription_id'])
+                ? (int) $data['prescription_id']
+                : null
+        );
+
+        if (!$sample || !$sample->ink_file_path) {
+            return ApiResponse::notFound(
+                'Doctor handwriting file not found.'
+            );
+        }
+
+        return $doctorHandwritingSampleService->downloadFile(
+            $sample
+        );
+    }
 }

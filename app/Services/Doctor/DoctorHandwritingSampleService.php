@@ -7,6 +7,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DoctorHandwritingSampleService
 {
@@ -231,5 +232,34 @@ class DoctorHandwritingSampleService
                 'Prescription ID is required for prescription samples.'
             );
         }
+    }
+
+    public function downloadFile(
+        DoctorHandwritingSample $sample
+    ): BinaryFileResponse {
+        $disk = Storage::disk('local');
+
+        if (
+            !$disk->exists(
+                $sample->ink_file_path
+            )
+        ) {
+            abort(
+                404,
+                'Doctor handwriting file not found.'
+            );
+        }
+
+        $filePath = $disk->path(
+            $sample->ink_file_path
+        );
+
+        return response()->download(
+            $filePath,
+            basename($sample->ink_file_path),
+            [
+                'Content-Type' => 'application/octet-stream',
+            ]
+        );
     }
 }

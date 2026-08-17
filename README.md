@@ -41,11 +41,13 @@ DB::reconnect('doctor');
 ## command 
 cd /var/www/nexink-rx-api
 - php artisan migrate:fresh
+- php artisan doctor:migrate 1
 -   php artisan optimize:clear
     php artisan route:clear
     php artisan config:clear
     php artisan cache:clear
     php artisan route:list
+    php artisan queue:restart
     php artisan serve
 
 

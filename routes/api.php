@@ -82,6 +82,7 @@ Route::middleware([
     Route::patch('password', [DoctorAuthController::class, 'changePassword']);
 
     Route::get('handwriting-samples',[DoctorHandwritingSampleController::class, 'index']);
+    Route::get('handwriting-samples/file',[DoctorHandwritingSampleController::class, 'file']);
     Route::post('handwriting-samples',[DoctorHandwritingSampleController::class, 'store']);
     Route::put('handwriting-samples',[DoctorHandwritingSampleController::class, 'update']);
 
