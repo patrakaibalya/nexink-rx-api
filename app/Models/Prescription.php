@@ -48,4 +48,12 @@ class Prescription extends Model
         return $this->hasMany(PrescriptionItem::class)
             ->orderBy('sort_order');
     }
+
+    public function handwritingSamples()
+    {
+        return $this->hasMany(
+            DoctorHandwritingSample::class,
+            'prescription_id'
+        );
+    }
 }

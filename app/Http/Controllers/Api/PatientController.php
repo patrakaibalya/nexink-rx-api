@@ -109,7 +109,7 @@ class PatientController extends Controller
                 },
                 'prescriptions' => function ($query) {
                     $query
-                        ->with('items')
+                        ->with(['items','handwritingSamples'])
                         ->latest('id');
                 },
                 'investigations' => function ($query) {
