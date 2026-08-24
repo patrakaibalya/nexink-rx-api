@@ -45,10 +45,12 @@ class ClinicalExtractionService
                     'clinic_id' => $visit->clinic_id,
                     'patient_id' => $visit->patient_id,
                     'visit_id' => $visit->id,
-                    'schema_version' => $data['schema_version'],
+                    'schema_version' => '1.0',
                     'status' => 'processing',
-                    'confidence' => $data['confidence'] ?? null,
-                    'payload' => $data,
+                    'confidence' => null,
+                    'payload' => [
+                        'finalized_data' => $data['finalized_data'],
+                    ],
                 ]);
 
                 return $extraction->load([
