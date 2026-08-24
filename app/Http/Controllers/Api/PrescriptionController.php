@@ -88,4 +88,20 @@ class PrescriptionController extends Controller
             ]
         );
     }
+
+    public function createForVisit(
+        PrescriptionService $prescriptionService,
+        int $visitId
+    ): JsonResponse {
+        $prescription = $prescriptionService->createDraftForVisit(
+            $visitId
+        );
+
+        return ApiResponse::created(
+            message: 'Draft prescription created successfully.',
+            data: [
+                'prescription' => $prescription,
+            ]
+        );
+    }
 }

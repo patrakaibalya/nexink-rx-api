@@ -81,12 +81,12 @@ Route::middleware([
     Route::patch('me', [DoctorAuthController::class, 'updateProfile']);
     Route::patch('password', [DoctorAuthController::class, 'changePassword']);
 
-    Route::get('handwriting-samples',[DoctorHandwritingSampleController::class, 'index']);
-    Route::get('handwriting-samples/file',[DoctorHandwritingSampleController::class, 'file']);
-    Route::post('handwriting-samples',[DoctorHandwritingSampleController::class, 'store']);
-    Route::put('handwriting-samples',[DoctorHandwritingSampleController::class, 'update']);
+    Route::get('handwriting-samples', [DoctorHandwritingSampleController::class, 'index']);
+    Route::get('handwriting-samples/file', [DoctorHandwritingSampleController::class, 'file']);
+    Route::post('handwriting-samples', [DoctorHandwritingSampleController::class, 'store']);
+    Route::put('handwriting-samples', [DoctorHandwritingSampleController::class, 'update']);
 
-    Route::post('handwriting/correct',[DoctorHandwritingCorrectionController::class, 'correct']);
+    Route::post('handwriting/correct', [DoctorHandwritingCorrectionController::class, 'correct']);
 
     Route::get('patients', [PatientController::class, 'index']);
     Route::post('patients', [PatientController::class, 'store']);
@@ -133,6 +133,7 @@ Route::middleware([
 
     Route::post('visits/start', [VisitController::class, 'start']);
     Route::post('visits/direct', [VisitController::class, 'direct']); //Emergency
+    Route::post('visits/{visitId}/prescription',[PrescriptionController::class, 'createForVisit']);
     Route::patch('visits/{visitId}/complete', [VisitController::class, 'complete']);
     Route::get('visits/{visitId}', [VisitController::class, 'show']);
     Route::patch('visits/{visitId}', [VisitController::class, 'update']);

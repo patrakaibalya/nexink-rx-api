@@ -171,9 +171,9 @@ class ClinicalExtractionService
                     ]);
                 }
 
-                /*
+                            /*
             |--------------------------------------------------------------------------
-            | Create Prescription
+            | Update Draft Prescription
             |--------------------------------------------------------------------------
             */
 
@@ -181,16 +181,28 @@ class ClinicalExtractionService
 
                 if (!empty($medicines)) {
 
-                    $prescription = Prescription::create([
-                        'clinic_id' => $extraction->clinic_id,
-                        'patient_id' => $extraction->patient_id,
-                        'visit_id' => $extraction->visit_id,
-                        'prescription_date' => now(
-                            $extraction->clinic->timezone
-                        )->toDateString(),
-                        'notes' => null,
-                        'status' => 'draft',
-                    ]);
+                    $prescription = Prescription::query()
+                        ->where('visit_id', $extraction->visit_id)
+                        ->where('status', 'draft')
+                        ->latest('id')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$prescription) {
+                        throw ValidationException::withMessages([
+                            'prescription_id' => [
+                                'Draft prescription not found for this visit.',
+                            ],
+                        ]);
+                    }
+
+                            /*
+            |--------------------------------------------------------------------------
+            | Replace Prescription Items
+            |--------------------------------------------------------------------------
+            */
+
+                    $prescription->items()->delete();
 
                     foreach ($medicines as $index => $medicine) {
                         $prescription->items()->create([

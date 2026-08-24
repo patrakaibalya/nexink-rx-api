@@ -27,7 +27,7 @@ class ClinicalExtractionController extends Controller
         ClinicalExtractionJob::dispatch(
             $extraction->id,
             $request->user()->id
-        )->afterCommit();
+        );
 
         return ApiResponse::created(
             message: 'Clinical extraction processing started.',

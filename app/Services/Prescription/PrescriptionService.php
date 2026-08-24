@@ -213,4 +213,65 @@ class PrescriptionService
             }
         );
     }
+
+    public function createDraftForVisit(int $visitId): Prescription
+    {
+        return DB::connection('doctor')->transaction(
+            function () use ($visitId) {
+
+                $visit = \App\Models\Visit::query()
+                    ->lockForUpdate()
+                    ->find($visitId);
+
+                if (!$visit) {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'Visit not found.',
+                        ],
+                    ]);
+                }
+
+                if ($visit->status !== 'in_progress') {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'A draft prescription can only be created for an active visit.',
+                        ],
+                    ]);
+                }
+
+                $existingPrescription = Prescription::query()
+                    ->where('visit_id', $visit->id)
+                    ->where('status', 'draft')
+                    ->latest('id')
+                    ->first();
+
+                if ($existingPrescription) {
+                    return $existingPrescription->fresh([
+                        'clinic',
+                        'patient',
+                        'visit',
+                        'items',
+                    ]);
+                }
+
+                $prescription = Prescription::create([
+                    'clinic_id' => $visit->clinic_id,
+                    'patient_id' => $visit->patient_id,
+                    'visit_id' => $visit->id,
+                    'prescription_date' => now(
+                        $visit->clinic->timezone
+                    )->toDateString(),
+                    'notes' => null,
+                    'status' => 'draft',
+                ]);
+
+                return $prescription->fresh([
+                    'clinic',
+                    'patient',
+                    'visit',
+                    'items',
+                ]);
+            }
+        );
+    }
 }
