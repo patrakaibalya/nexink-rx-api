@@ -46,7 +46,7 @@ class ClinicalExtractionService
                     'patient_id' => $visit->patient_id,
                     'visit_id' => $visit->id,
                     'schema_version' => $data['schema_version'],
-                    'status' => 'pending',
+                    'status' => 'processing',
                     'confidence' => $data['confidence'] ?? null,
                     'payload' => $data,
                 ]);

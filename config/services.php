@@ -49,6 +49,9 @@ return [
             'N8N_DOCTOR_HANDWRITING_CORRECTION_WEBHOOK'
         ),
 
+        'clinical_extraction_webhook' =>
+        env('N8N_CLINICAL_EXTRACTION_WEBHOOK'),
+
     ],
 
 ];

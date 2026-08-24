@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ClinicalExtraction\ClinicalExtractionConfirmRequest;
 use App\Http\Requests\ClinicalExtraction\ClinicalExtractionRejectRequest;
 use App\Http\Requests\ClinicalExtraction\ClinicalExtractionStoreRequest;
+use App\Jobs\ClinicalExtractionJob;
 use App\Services\ClinicalExtraction\ClinicalExtractionService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
 class ClinicalExtractionController extends Controller
 {
+
     public function store(
         ClinicalExtractionStoreRequest $request,
         ClinicalExtractionService $clinicalExtractionService,
@@ -22,13 +24,23 @@ class ClinicalExtractionController extends Controller
             $request->validated()
         );
 
+        ClinicalExtractionJob::dispatch(
+            $extraction->id,
+            $request->user()->id
+        )->afterCommit();
+
         return ApiResponse::created(
-            message: 'Clinical extraction stored successfully.',
+            message: 'Clinical extraction processing started.',
             data: [
-                'extraction' => $extraction,
+                'extraction' => [
+                    'id' => $extraction->id,
+                    'visit_id' => $extraction->visit_id,
+                    'status' => $extraction->status,
+                ],
             ]
         );
     }
+
 
     public function show(
         ClinicalExtractionService $clinicalExtractionService,
