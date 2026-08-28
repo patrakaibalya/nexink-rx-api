@@ -147,7 +147,8 @@ class ClinicalExtractionJob implements ShouldQueue
 
         $result = $response->json();
 
-        $clinicalExtraction = $result['clinical_extraction'] ?? null;
+        $clinicalExtraction = $result['clinical_extraction']
+            ?? ($result[0]['clinical_extraction'] ?? null);
 
         if (!is_array($clinicalExtraction)) {
             throw new \RuntimeException(
