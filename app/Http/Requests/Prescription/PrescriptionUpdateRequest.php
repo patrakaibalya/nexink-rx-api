@@ -20,6 +20,10 @@ class PrescriptionUpdateRequest extends FormRequest
                 'string',
                 'max:5000',
             ],
+            'finalized_data' => [
+                'sometimes',
+                'array',
+            ],
 
             'status' => [
                 'sometimes',

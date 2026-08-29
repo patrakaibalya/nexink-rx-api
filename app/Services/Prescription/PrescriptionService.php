@@ -69,6 +69,9 @@ class PrescriptionService
                     'notes' => array_key_exists('notes', $data)
                         ? $data['notes']
                         : $prescription->notes,
+                    'finalized_data' => array_key_exists('finalized_data', $data)
+                        ? $data['finalized_data']
+                        : $prescription->finalized_data,
                 ]);
 
                 if (array_key_exists('items', $data)) {

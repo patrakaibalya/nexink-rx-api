@@ -18,6 +18,7 @@ class Prescription extends Model
         'visit_id',
         'prescription_date',
         'notes',
+        'finalized_data',
         'status',
     ];
 
@@ -25,6 +26,7 @@ class Prescription extends Model
     {
         return [
             'prescription_date' => 'date',
+            'finalized_data' => 'array',
         ];
     }
 
