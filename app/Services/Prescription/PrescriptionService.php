@@ -6,6 +6,7 @@ use App\Models\Prescription;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+
 class PrescriptionService
 {
     public function show(int $prescriptionId): Prescription
