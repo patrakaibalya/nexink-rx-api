@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\ClinicalExtraction;
 use App\Models\DoctorDatabase;
+use App\Services\ClinicalExtraction\ClinicalExtractionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -174,6 +175,23 @@ class ClinicalExtractionJob implements ShouldQueue
 
             'status' => 'pending',
         ]);
+
+                    /*
+        |--------------------------------------------------------------------------
+        | Automatically Confirm AI Result
+        |--------------------------------------------------------------------------
+        |
+        | Android does not need to call /clinical-extraction/confirm.
+        | Once n8n successfully returns the AI result, Laravel confirms it
+        | in the background using the existing service logic.
+        |--------------------------------------------------------------------------
+        */
+
+
+        app(ClinicalExtractionService::class)->confirm(
+            $extraction->visit_id,
+            []
+        );
     }
 
     public function failed(Throwable $exception): void
