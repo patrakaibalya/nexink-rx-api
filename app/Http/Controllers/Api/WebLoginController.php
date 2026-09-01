@@ -15,12 +15,18 @@ class WebLoginController extends Controller
     public function challenge(
         WebLoginChallengeService $webLoginChallengeService
     ): JsonResponse {
-        $challenge = $webLoginChallengeService->create();
+
+        $result = $webLoginChallengeService->create();
+
+        $challenge = $result['challenge'];
+        $channelSecret = $result['channel_secret'];
 
         return ApiResponse::created(
             message: 'Web login challenge created successfully.',
             data: [
                 'challenge' => $challenge->challenge,
+
+                'channel_secret' => $channelSecret,
 
                 'qr_data' => sprintf(
                     '%s/web-login?challenge=%s',

@@ -18,10 +18,25 @@ class WebLoginChallengeService
         private WebLoginSocketService $webLoginSocketService
     ) {}
 
-    public function create(): WebLoginChallenge
+    /**
+     * Create a web login challenge and register
+     * its temporary Socket.IO channel.
+     *
+     * Returns:
+     * [
+     *     'challenge' => WebLoginChallenge,
+     *     'channel_secret' => string,
+     * ]
+     */
+
+    public function create(): array
     {
-        return WebLoginChallenge::create([
-            'challenge' => bin2hex(random_bytes(48)),
+        $challenge = bin2hex(random_bytes(48));
+
+        $channelSecret = bin2hex(random_bytes(32));
+
+        $loginChallenge = WebLoginChallenge::create([
+            'challenge' => $challenge,
             'doctor_id' => null,
             'status' => 'waiting',
             'expires_at' => now()->addSeconds(
@@ -32,6 +47,16 @@ class WebLoginChallengeService
             'handoff_hash' => null,
             'handoff_expires_at' => null,
         ]);
+
+        $this->webLoginSocketService->registerChannel(
+            $challenge,
+            $channelSecret
+        );
+
+        return [
+            'challenge' => $loginChallenge,
+            'channel_secret' => $channelSecret,
+        ];
     }
 
     /**

@@ -36,6 +36,9 @@ return [
     ],
 
     'socket' => [
+        'web_login_register_url' => env(
+            'SOCKET_WEB_LOGIN_REGISTER_URL'
+        ),
         'web_login_approved_url' => env(
             'SOCKET_WEB_LOGIN_APPROVED_URL'
         ),
