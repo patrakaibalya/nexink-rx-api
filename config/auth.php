@@ -44,6 +44,10 @@ return [
             'driver' => 'session',
             'provider' => 'master_admins',
         ],
+        'doctor_web' => [
+            'driver' => 'session',
+            'provider' => 'doctors',
+        ],
     ],
 
     /*

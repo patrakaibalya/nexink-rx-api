@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'doctor.tenant' => DoctorTenantMiddleware::class,
             'master_admins' => MasterAdminMiddleware::class,
             'medicine_organizations' => MedicineOrganizationMiddleware::class,
+            'web.login.session' => \App\Http\Middleware\StartWebLoginSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

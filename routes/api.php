@@ -20,9 +20,11 @@ use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PrescriptionController;
 use App\Http\Controllers\Api\QueueController;
 use App\Http\Controllers\Api\VisitController;
+use App\Http\Controllers\Api\WebLoginController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
+    Route::post('web-login/challenge', [WebLoginController::class, 'challenge']);
 
     Route::post('doctor/register', [DoctorAuthController::class, 'register']); //Android & iOS App
     Route::post('doctor/login', [DoctorAuthController::class, 'login']); //Android & iOS App
@@ -71,11 +73,22 @@ Route::middleware([
     Route::delete('global-medicines/{medicineId}', [GlobalMedicineLibraryController::class, 'destroy']);
 });
 
+
+// Authenticated Android doctor
+Route::post('auth/web-login/approve', [WebLoginController::class, 'approve'])->middleware('auth:sanctum');
+
+Route::post(
+    'auth/web-login/complete',
+    [WebLoginController::class, 'complete']
+)->middleware('web.login.session');
+
+
 //// Doctor-tenant APIs
 Route::middleware([
     'auth:sanctum',
     'doctor.tenant'
 ])->prefix('doctor')->group(function () {
+
 
     Route::get('me', [DoctorAuthController::class, 'me']);
     Route::patch('me', [DoctorAuthController::class, 'updateProfile']);
@@ -133,7 +146,7 @@ Route::middleware([
 
     Route::post('visits/start', [VisitController::class, 'start']);
     Route::post('visits/direct', [VisitController::class, 'direct']); //Emergency
-    Route::post('visits/{visitId}/prescription',[PrescriptionController::class, 'createForVisit']);
+    Route::post('visits/{visitId}/prescription', [PrescriptionController::class, 'createForVisit']);
     Route::patch('visits/{visitId}/complete', [VisitController::class, 'complete']);
     Route::get('visits/{visitId}', [VisitController::class, 'show']);
     Route::patch('visits/{visitId}', [VisitController::class, 'update']);

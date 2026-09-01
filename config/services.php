@@ -35,6 +35,15 @@ return [
         ],
     ],
 
+    'socket' => [
+        'web_login_approved_url' => env(
+            'SOCKET_WEB_LOGIN_APPROVED_URL'
+        ),
+        'api_key' => env(
+            'SOCKET_API_KEY'
+        ),
+    ],
+
     'n8n' => [
 
         'doctor_handwriting_memory_webhook' => env(
