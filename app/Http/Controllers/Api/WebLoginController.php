@@ -28,11 +28,7 @@ class WebLoginController extends Controller
 
                 'channel_secret' => $channelSecret,
 
-                'qr_data' => sprintf(
-                    '%s/web-login?challenge=%s',
-                    config('app.web_url'),
-                    $challenge->challenge
-                ),
+                'qr_data' => $challenge->challenge,
 
                 'expires_at' => $challenge->expires_at,
             ]
