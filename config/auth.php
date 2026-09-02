@@ -48,6 +48,10 @@ return [
             'driver' => 'session',
             'provider' => 'doctors',
         ],
+        'doctors' => [
+            'driver' => 'eloquent',
+            'model' => DoctorAccount::class,
+        ],
     ],
 
     /*

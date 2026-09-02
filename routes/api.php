@@ -83,6 +83,11 @@ Route::post(
 )->middleware('web.login.session');
 
 
+// Doctor web session API
+Route::middleware('auth:doctor_web')->prefix('doctor')->group(function () {
+    Route::get('me', [DoctorAuthController::class, 'me']);
+});
+
 //// Doctor-tenant APIs
 Route::middleware([
     'auth:sanctum',
@@ -183,7 +188,4 @@ Route::middleware([
 });
 
 
-// Doctor web session API
-Route::middleware('auth:doctor_web')->prefix('doctor')->group(function () {
-    Route::get('me', [DoctorAuthController::class, 'me']);
-});
+
