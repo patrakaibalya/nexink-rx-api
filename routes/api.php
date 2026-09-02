@@ -181,3 +181,9 @@ Route::middleware([
 
     Route::post('logout', [DoctorAuthController::class, 'logout']);
 });
+
+
+// Doctor web session API
+Route::middleware('auth:doctor_web')->prefix('doctor')->group(function () {
+    Route::get('me', [DoctorAuthController::class, 'me']);
+});
