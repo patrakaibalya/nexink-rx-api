@@ -69,19 +69,7 @@ class DoctorAuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        // $doctor = $request->user();
-
-        $doctor = auth('sanctum')->user();
-
-        if (!$doctor) {
-            $doctor = auth('doctor_web')->user();
-        }
-
-        if (!$doctor) {
-            return ApiResponse::unauthorized(
-                message: 'Unauthenticated.'
-            );
-        }
+        $doctor = $request->user();
 
         return ApiResponse::success(
             message: 'Doctor profile retrieved successfully.',

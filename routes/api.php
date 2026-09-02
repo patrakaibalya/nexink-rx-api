@@ -95,7 +95,7 @@ Route::middleware([
 ])->prefix('doctor')->group(function () {
 
 
-    Route::get('me', [DoctorAuthController::class, 'me']);
+    // Route::get('me', [DoctorAuthController::class, 'me']);
     Route::patch('me', [DoctorAuthController::class, 'updateProfile']);
     Route::patch('password', [DoctorAuthController::class, 'changePassword']);
 
