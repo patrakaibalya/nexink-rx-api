@@ -82,12 +82,14 @@ class WebLoginController extends Controller
             ], 422);
         }
 
+        $request->session()->regenerate();
+
         /** @var StatefulGuard $guard */
         $guard = auth()->guard('doctor_web');
 
         $guard->login($doctor);
 
-        $request->session()->regenerate();
+
 
         return ApiResponse::success(
             message: 'Web login completed successfully.',
