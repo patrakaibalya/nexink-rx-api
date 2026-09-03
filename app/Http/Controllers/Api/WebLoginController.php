@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\WebLoginApproveRequest;
 use App\Http\Requests\Auth\WebLoginCompleteRequest;
+use App\Models\DoctorWebSession;
 use App\Services\Auth\WebLoginChallengeService;
 use App\Support\ApiResponse;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Http\JsonResponse;
 
 class WebLoginController extends Controller
 {
@@ -89,7 +90,15 @@ class WebLoginController extends Controller
 
         $guard->login($doctor);
 
-
+        DoctorWebSession::updateOrCreate(
+            [
+                'doctor_id' => $doctor->id,
+            ],
+            [
+                'session_id' => $request->session()->getId(),
+                'revoked' => false,
+            ]
+        );
 
         return ApiResponse::success(
             message: 'Web login completed successfully.',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\DoctorWebSession;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
@@ -39,6 +40,20 @@ class DoctorWebOrSanctumMiddleware
             return response()->json([
                 'message' => 'Unauthenticated.',
             ], 401);
+        }
+
+        if (!$request->bearerToken()) {
+            $webSession = DoctorWebSession::query()
+                ->where('doctor_id', $doctor->id)
+                ->where('session_id', $request->session()->getId())
+                ->where('revoked', false)
+                ->first();
+
+            if (!$webSession) {
+                return response()->json([
+                    'message' => 'Web session expired.',
+                ], 401);
+            }
         }
 
         $request->setUserResolver(
