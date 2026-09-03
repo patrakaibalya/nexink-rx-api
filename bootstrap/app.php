@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\DoctorTenantMiddleware;
+use App\Http\Middleware\DoctorWebOrSanctumMiddleware;
 use App\Http\Middleware\MasterAdminMiddleware;
 use App\Http\Middleware\MedicineOrganizationMiddleware;
 use App\Support\ApiResponse;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'master_admins' => MasterAdminMiddleware::class,
             'medicine_organizations' => MedicineOrganizationMiddleware::class,
             'web.login.session' => \App\Http\Middleware\StartWebLoginSession::class,
+            'doctor.auth' => DoctorWebOrSanctumMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

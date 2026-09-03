@@ -83,9 +83,9 @@ Route::post(
 )->middleware('web.login.session');
 
 
-// Doctor web session API
-Route::middleware('auth:doctor_web')->prefix('doctor')->group(function () {
-    Route::get('me', [DoctorAuthController::class, 'me']);
+// Doctor profile - Android + Web
+Route::middleware('doctor.auth')->group(function () {
+    Route::get('doctor/me', [DoctorAuthController::class, 'me']);
 });
 
 //// Doctor-tenant APIs
@@ -186,6 +186,3 @@ Route::middleware([
 
     Route::post('logout', [DoctorAuthController::class, 'logout']);
 });
-
-
-
