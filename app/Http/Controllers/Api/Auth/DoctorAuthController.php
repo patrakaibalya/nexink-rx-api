@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\DoctorLoginRequest;
 use App\Http\Requests\Auth\DoctorRegisterRequest;
 use App\Http\Requests\Doctor\DoctorChangePasswordRequest;
 use App\Http\Requests\Doctor\DoctorProfileUpdateRequest;
+use App\Models\DoctorWebSession;
 use App\Services\Auth\DoctorAuthService;
 use App\Support\ApiResponse;
 use Illuminate\Contracts\Auth\StatefulGuard;
@@ -106,19 +107,22 @@ class DoctorAuthController extends Controller
     {
         // Android logout
         if ($request->bearerToken()) {
-            $token = $request->user()?->currentAccessToken();
+            $doctor = $request->user();
+
+            $token = $doctor?->currentAccessToken();
 
             if ($token) {
                 $token->delete();
             }
 
-            /** @var StatefulGuard $webGuard */
-            $webGuard = auth()->guard('doctor_web');
-
-            $webGuard->logout();
-
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            if ($doctor) {
+                DoctorWebSession::where(
+                    'doctor_id',
+                    $doctor->id
+                )->update([
+                    'revoked' => true,
+                ]);
+            }
 
             return ApiResponse::success(
                 message: 'Doctor logged out successfully.'
