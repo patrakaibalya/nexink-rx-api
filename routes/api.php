@@ -84,18 +84,19 @@ Route::post(
 
 
 // Doctor profile - Android + Web
-Route::middleware('doctor.auth')->group(function () {
-    Route::get('doctor/me', [DoctorAuthController::class, 'me']);
-});
+// Route::middleware('doctor.auth')->group(function () {
+//     Route::get('doctor/me', [DoctorAuthController::class, 'me']);
+// });
 
 //// Doctor-tenant APIs
 Route::middleware([
-    'auth:sanctum',
+    'doctor.auth',
+    // 'auth:sanctum',
     'doctor.tenant'
 ])->prefix('doctor')->group(function () {
 
 
-    // Route::get('me', [DoctorAuthController::class, 'me']);
+    Route::get('me', [DoctorAuthController::class, 'me']);
     Route::patch('me', [DoctorAuthController::class, 'updateProfile']);
     Route::patch('password', [DoctorAuthController::class, 'changePassword']);
 

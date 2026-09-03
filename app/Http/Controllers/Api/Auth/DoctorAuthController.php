@@ -9,6 +9,7 @@ use App\Http\Requests\Doctor\DoctorChangePasswordRequest;
 use App\Http\Requests\Doctor\DoctorProfileUpdateRequest;
 use App\Services\Auth\DoctorAuthService;
 use App\Support\ApiResponse;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -103,7 +104,37 @@ class DoctorAuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        // Android logout
+        if ($request->bearerToken()) {
+            $token = $request->user()?->currentAccessToken();
+
+            if ($token) {
+                $token->delete();
+            }
+
+            /** @var StatefulGuard $webGuard */
+            $webGuard = auth()->guard('doctor_web');
+
+            $webGuard->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return ApiResponse::success(
+                message: 'Doctor logged out successfully.'
+            );
+        }
+
+    // Web logout
+        /** @var StatefulGuard $webGuard */
+        $webGuard = auth()->guard('doctor_web');
+
+        if ($webGuard->check()) {
+            $webGuard->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return ApiResponse::success(
             message: 'Doctor logged out successfully.'
