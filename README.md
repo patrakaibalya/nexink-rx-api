@@ -50,6 +50,7 @@ cd /var/www/nexink-rx-api
     php artisan route:list
     php artisan queue:restart
     php artisan serve
+    
 
 
 - sudo chown -R ubuntu:www-data storage bootstrap/cache
