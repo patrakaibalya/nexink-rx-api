@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\MasterAuthController;
 use App\Http\Controllers\Api\Auth\MedicineOrganizationAuthController;
 use App\Http\Controllers\Api\ClinicalExtractionController;
 use App\Http\Controllers\Api\ClinicController;
+use App\Http\Controllers\Api\ClinicPrescriptionTemplateController;
 use App\Http\Controllers\Api\DoctorDashboardController;
 use App\Http\Controllers\Api\DoctorHandwritingCorrectionController;
 use App\Http\Controllers\Api\DoctorHandwritingSampleController;
@@ -149,6 +150,11 @@ Route::middleware([
     Route::put('clinics/{clinicId}/working-hours', [ClinicController::class, 'updateWorkingHours']);
     Route::get('clinics/{clinicId}/working-hours', [ClinicController::class, 'workingHours']);
     Route::get('clinics/{clinicId}', [ClinicController::class, 'show']);
+
+    Route::get('clinics/{clinicId}/prescription-template', [ClinicPrescriptionTemplateController::class, 'show']);
+    Route::post('clinics/{clinicId}/prescription-template', [ClinicPrescriptionTemplateController::class, 'store']);
+    Route::get('clinics/{clinicId}/prescription-template/header-image', [ClinicPrescriptionTemplateController::class, 'headerImage']);
+    Route::get('clinics/{clinicId}/prescription-template/footer-image', [ClinicPrescriptionTemplateController::class, 'footerImage']);
 
     Route::get('dashboard/summary', [DoctorDashboardController::class, 'summary']);
 
