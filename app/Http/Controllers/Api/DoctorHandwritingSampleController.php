@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Doctor\DoctorHandwritingSampleRequest;
 use App\Jobs\ProcessDoctorHandwritingMemory;
 use App\Services\Doctor\DoctorHandwritingSampleService;
+use App\Services\Doctor\DoctorHandwritingStrokeService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -176,6 +177,59 @@ class DoctorHandwritingSampleController extends Controller
 
         return $doctorHandwritingSampleService->downloadFile(
             $sample
+        );
+    }
+
+
+    public function strokes(
+        Request $request,
+        DoctorHandwritingSampleService $service,
+        DoctorHandwritingStrokeService $strokeService
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $data = Validator::make($request->query(), [
+            'sample_type' => [
+                'required',
+                'string',
+                'in:about_me,prescription',
+            ],
+            'prescription_id' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'required_if:sample_type,prescription',
+                'prohibited_if:sample_type,about_me',
+            ],
+        ])->validate();
+
+        $sample = $service->index(
+            doctorId: $doctor->id,
+            sampleType: $data['sample_type'],
+            prescriptionId: isset($data['prescription_id'])
+                ? (int) $data['prescription_id']
+                : null
+        );
+
+        if (!$sample || !$sample->ink_file_path) {
+            return ApiResponse::notFound(
+                'Doctor handwriting sample not found.'
+            );
+        }
+
+        try {
+            $data = $strokeService->decode($sample);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error(
+                message: $e->getMessage(),
+                data: null,
+                status: 500
+            );
+        }
+
+        return ApiResponse::success(
+            message: 'Doctor handwriting strokes retrieved successfully.',
+            data: $data
         );
     }
 }

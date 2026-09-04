@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package nexink.proto;
+
+option java_multiple_files = true;
+option java_package = "com.nexinkrx.proto";
+option java_outer_classname = "InkProto";
+
+message ProtoInkDocument {
+
+  repeated ProtoInkStroke strokes = 1;
+
+}
+
+message ProtoInkStroke {
+
+  string id = 1;
+
+  repeated ProtoInkPoint points = 2;
+
+  float width = 3;
+
+  int32 color = 4;
+
+  bool is_eraser = 5;
+
+}
+
+message ProtoInkPoint {
+
+  float x = 1;
+
+  float y = 2;
+
+  float pressure = 3;
+
+  float tilt = 4;
+
+  float orientation = 5;
+
+  float velocity = 6;
+
+  int64 timestamp = 7;
+
+}
