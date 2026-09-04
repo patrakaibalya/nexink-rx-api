@@ -16,6 +16,7 @@ class InvestigationService
                 'patient',
                 'visit',
                 'items',
+                'documents',
             ])
             ->find($investigationId);
 
@@ -85,6 +86,7 @@ class InvestigationService
                     'patient',
                     'visit',
                     'items',
+                    'documents',
                 ]);
             }
         );
@@ -123,6 +125,7 @@ class InvestigationService
                 'patient',
                 'visit',
                 'items',
+                'documents',
             ])
             ->latest('id');
 
@@ -224,6 +227,7 @@ class InvestigationService
                     'patient',
                     'visit',
                     'items',
+                    'documents',
                 ]);
             }
         );

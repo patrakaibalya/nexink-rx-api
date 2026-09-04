@@ -48,4 +48,10 @@ class Investigation extends Model
         return $this->hasMany(InvestigationItem::class)
             ->orderBy('sort_order');
     }
+
+    public function documents()
+    {
+        return $this->hasMany(InvestigationDocument::class)
+            ->latest('id');
+    }
 }

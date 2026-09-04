@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
 use App\Http\Controllers\Api\InvestigationController;
+use App\Http\Controllers\Api\InvestigationDocumentController;
 use App\Http\Controllers\Api\MedicineOrganizationController;
 use App\Http\Controllers\Api\MedicineOrganizationSubscriptionController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
@@ -183,6 +184,9 @@ Route::middleware([
     Route::delete('investigations/{investigationId}', [InvestigationController::class, 'destroy']);
     Route::get('investigations', [InvestigationController::class, 'index']);
     Route::post('investigations/{investigationId}/complete', [InvestigationController::class, 'complete']);
+    Route::post('investigations/{investigationId}/documents', [InvestigationDocumentController::class, 'store']);
+    Route::get('investigations/{investigationId}/documents/{documentId}/file', [InvestigationDocumentController::class, 'file']);
+    Route::delete('investigations/{investigationId}/documents/{documentId}', [InvestigationDocumentController::class, 'destroy']);
 
     Route::get('medicine-organizations', [DoctorMedicineOrganizationController::class, 'index']);
     Route::get('all-medicine-organizations', [DoctorMedicineOrganizationController::class, 'allOrganizations']);
