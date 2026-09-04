@@ -24,6 +24,8 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "Nexink\\Proto\\": "app/Protobuf/Nexink/Proto/",
+            "GPBMetadata\\": "app/Protobuf/GPBMetadata/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }
