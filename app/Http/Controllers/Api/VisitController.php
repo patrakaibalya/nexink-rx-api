@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Visit\DirectVisitRequest;
 use App\Http\Requests\Visit\VisitCompleteRequest;
+use App\Http\Requests\Visit\VisitIndexRequest;
 use App\Http\Requests\Visit\VisitStartRequest;
 use App\Http\Requests\Visit\VisitUpdateRequest;
 use App\Services\Visit\VisitService;
@@ -25,6 +26,22 @@ class VisitController extends Controller
             message: 'Consultation started successfully.',
             data: [
                 'visit' => $visit,
+            ]
+        );
+    }
+
+    public function index(
+        VisitIndexRequest $request,
+        VisitService $visitService
+    ): JsonResponse {
+        $visits = $visitService->index(
+            $request->validated()
+        );
+
+        return ApiResponse::success(
+            message: 'Visits retrieved successfully.',
+            data: [
+                'visits' => $visits,
             ]
         );
     }

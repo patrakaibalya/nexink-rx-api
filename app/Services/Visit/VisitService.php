@@ -190,6 +190,41 @@ class VisitService
         );
     }
 
+    public function index(array $filters)
+    {
+        $query = Visit::query()
+            ->with([
+                'clinic',
+                'patient',
+                'appointment',
+                'queue',
+                'prescription',
+                'clinicalExtractions',
+                'investigations',
+            ])
+            ->whereDate(
+                'visit_date',
+                $filters['date'] ?? now()->toDateString()
+            )
+            ->latest('started_at');
+
+        if (!empty($filters['clinic_id'])) {
+            $query->where('clinic_id', $filters['clinic_id']);
+        }
+
+        if (!empty($filters['patient_id'])) {
+            $query->where('patient_id', $filters['patient_id']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->paginate(
+            $filters['per_page'] ?? 20
+        );
+    }
+
     public function show(int $visitId): Visit
     {
         $visit = Visit::query()

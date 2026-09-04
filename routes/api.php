@@ -152,6 +152,7 @@ Route::middleware([
 
     Route::get('dashboard/summary', [DoctorDashboardController::class, 'summary']);
 
+    Route::get('visits', [VisitController::class, 'index']); //Date-wise consultation list
     Route::post('visits/start', [VisitController::class, 'start']);
     Route::post('visits/direct', [VisitController::class, 'direct']); //Emergency
     Route::post('visits/{visitId}/prescription', [PrescriptionController::class, 'createForVisit']);
