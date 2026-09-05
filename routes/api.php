@@ -164,6 +164,7 @@ Route::middleware([
     Route::get('visits', [VisitController::class, 'index']); //Date-wise consultation list
     Route::post('visits/start', [VisitController::class, 'start']);
     Route::post('visits/direct', [VisitController::class, 'direct']); //Emergency
+    Route::delete('visits/{visitId}/reset-direct', [VisitController::class, 'resetDirect']); //Undo accidental Emergency click
     Route::post('visits/{visitId}/prescription', [PrescriptionController::class, 'createForVisit']);
     Route::patch('visits/{visitId}/complete', [VisitController::class, 'complete']);
     Route::get('visits/{visitId}', [VisitController::class, 'show']);

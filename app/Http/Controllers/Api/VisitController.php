@@ -111,4 +111,16 @@ class VisitController extends Controller
             ]
         );
     }
+
+    public function resetDirect(
+        VisitService $visitService,
+        int $visitId
+    ): JsonResponse {
+        $visitService->resetDirect($visitId);
+
+        return ApiResponse::success(
+            message: 'Direct consultation reset successfully.',
+            data: []
+        );
+    }
 }

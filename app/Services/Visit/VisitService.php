@@ -4,10 +4,16 @@ namespace App\Services\Visit;
 
 use App\Models\Appointment;
 use App\Models\Clinic;
+use App\Models\ClinicalExtraction;
+use App\Models\DoctorHandwritingSample;
+use App\Models\Investigation;
+use App\Models\InvestigationDocument;
 use App\Models\Patient;
+use App\Models\Prescription;
 use App\Models\Queue;
 use App\Models\Visit;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class VisitService
@@ -459,6 +465,100 @@ class VisitService
                     'appointment',
                     'queue',
                 ]);
+            }
+        );
+    }
+
+    public function resetDirect(int $visitId): void
+    {
+        DB::connection('doctor')->transaction(
+            function () use ($visitId) {
+                $visit = Visit::query()
+                    ->lockForUpdate()
+                    ->find($visitId);
+
+                if (!$visit) {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'Visit not found.',
+                        ],
+                    ]);
+                }
+
+                if (
+                    $visit->appointment_id !== null
+                    || $visit->queue_id !== null
+                ) {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'Only a direct visit can be reset.',
+                        ],
+                    ]);
+                }
+
+                if ($visit->status !== 'in_progress') {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'Only an in-progress direct visit can be reset.',
+                        ],
+                    ]);
+                }
+
+                $prescription = Prescription::query()
+                    ->where('visit_id', $visit->id)
+                    ->first();
+
+                if ($prescription) {
+                    DoctorHandwritingSample::query()
+                        ->where('prescription_id', $prescription->id)
+                        ->get()
+                        ->each(function (DoctorHandwritingSample $sample) {
+                            if (
+                                $sample->ink_file_path
+                                && Storage::disk('local')->exists(
+                                    $sample->ink_file_path
+                                )
+                            ) {
+                                Storage::disk('local')->delete(
+                                    $sample->ink_file_path
+                                );
+                            }
+
+                            $sample->delete();
+                        });
+
+                    $prescription->items()->delete();
+                    $prescription->forceDelete();
+                }
+
+                Investigation::query()
+                    ->where('visit_id', $visit->id)
+                    ->get()
+                    ->each(function (Investigation $investigation) {
+                        $investigation->documents
+                            ->each(function (InvestigationDocument $document) {
+                                if (
+                                    Storage::disk('local')->exists(
+                                        $document->file_path
+                                    )
+                                ) {
+                                    Storage::disk('local')->delete(
+                                        $document->file_path
+                                    );
+                                }
+
+                                $document->delete();
+                            });
+
+                        $investigation->items()->delete();
+                        $investigation->forceDelete();
+                    });
+
+                ClinicalExtraction::query()
+                    ->where('visit_id', $visit->id)
+                    ->forceDelete();
+
+                $visit->forceDelete();
             }
         );
     }
