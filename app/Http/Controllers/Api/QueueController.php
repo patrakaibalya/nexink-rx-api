@@ -113,6 +113,20 @@ class QueueController extends Controller
         );
     }
 
+    public function callSpecific(
+        QueueService $queueService,
+        int $queueId
+    ): JsonResponse {
+        $queue = $queueService->callSpecific($queueId);
+
+        return ApiResponse::success(
+            message: 'Patient called successfully.',
+            data: [
+                'queue' => $queue,
+            ]
+        );
+    }
+
     public function resetCallNext(
         CallNextQueueRequest $request,
         QueueService $queueService

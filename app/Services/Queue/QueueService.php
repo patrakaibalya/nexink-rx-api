@@ -196,6 +196,42 @@ class QueueService
         );
     }
 
+    public function callSpecific(int $queueId): Queue
+    {
+        return DB::connection('doctor')->transaction(
+            function () use ($queueId) {
+                $queue = Queue::query()
+                    ->lockForUpdate()
+                    ->find($queueId);
+
+                if (!$queue) {
+                    throw ValidationException::withMessages([
+                        'queue_id' => ['Queue not found.'],
+                    ]);
+                }
+
+                if ($queue->status !== 'waiting') {
+                    throw ValidationException::withMessages([
+                        'queue_id' => [
+                            "Cannot call patient with status "
+                                . "{$queue->status}."
+                        ],
+                    ]);
+                }
+
+                $queue->update([
+                    'status' => 'called',
+                    'called_at' => now(),
+                ]);
+
+                return $queue->fresh([
+                    'clinic',
+                    'patient',
+                ]);
+            }
+        );
+    }
+
     public function resetCallNext(int $clinicId): Queue
     {
         return DB::connection('doctor')->transaction(
