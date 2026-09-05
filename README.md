@@ -73,6 +73,24 @@ TRUNCATE TABLE nexink_master.doctor_accounts;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+## fillzilla file access file
+
+sudo chown -R www-data:www-data /var/www/nexink-rx-api/storage/app/private/doctor-1
+sudo chown -R www-data:www-data /var/www/nexink-rx-api/storage/app/private/clinic-1
+
+## Filezilla after ->change and see in filezilla
+
+sudo find /var/www/nexink-rx-api/storage/app/private/doctor-1 -type d -exec chmod 700 {} \;
+sudo find /var/www/nexink-rx-api/storage/app/private/doctor-1 -type f -exec chmod 600 {} \;
+
+sudo find /var/www/nexink-rx-api/storage/app/private/clinic-1 -type d -exec chmod 700 {} \;
+sudo find /var/www/nexink-rx-api/storage/app/private/clinic-1 -type f -exec chmod 600 {} \;
+
+## Filezilla verify 
+
+ls -lad /var/www/nexink-rx-api/storage/app/private/doctor-1
+ls -lad /var/www/nexink-rx-api/storage/app/private/clinic-1
+
 
 ## git pull
 ubuntu@ip-172-31-12-116:/var/www/nexink-rx-api$ 

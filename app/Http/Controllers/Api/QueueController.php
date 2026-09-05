@@ -113,6 +113,22 @@ class QueueController extends Controller
         );
     }
 
+    public function resetCallNext(
+        CallNextQueueRequest $request,
+        QueueService $queueService
+    ): JsonResponse {
+        $queue = $queueService->resetCallNext(
+            $request->integer('clinic_id')
+        );
+
+        return ApiResponse::success(
+            message: 'Queue call reset successfully.',
+            data: [
+                'queue' => $queue,
+            ]
+        );
+    }
+
     public function current(
         CurrentQueueRequest $request,
         QueueService $queueService

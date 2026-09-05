@@ -196,6 +196,47 @@ class QueueService
         );
     }
 
+    public function resetCallNext(int $clinicId): Queue
+    {
+        return DB::connection('doctor')->transaction(
+            function () use ($clinicId) {
+                $clinic = Clinic::find($clinicId);
+
+                if (!$clinic) {
+                    throw ValidationException::withMessages([
+                        'clinic_id' => ['Clinic not found.'],
+                    ]);
+                }
+
+                $queueDate = now()->toDateString();
+
+                $queue = Queue::query()
+                    ->where('clinic_id', $clinicId)
+                    ->whereDate('queue_date', $queueDate)
+                    ->where('status', 'called')
+                    ->orderByDesc('called_at')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$queue) {
+                    throw ValidationException::withMessages([
+                        'queue' => ['No recently called patient to reset.'],
+                    ]);
+                }
+
+                $queue->update([
+                    'status' => 'waiting',
+                    'called_at' => null,
+                ]);
+
+                return $queue->fresh([
+                    'clinic',
+                    'patient',
+                ]);
+            }
+        );
+    }
+
     public function current(int $clinicId): ?Queue
     {
         return Queue::query()

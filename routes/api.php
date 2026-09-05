@@ -129,6 +129,7 @@ Route::middleware([
     Route::get('queues', [QueueController::class, 'index']);
     Route::patch('queues/{queueId}/status', [QueueController::class, 'updateStatus']);
     Route::post('queues/call-next', [QueueController::class, 'callNext']);
+    Route::post('queues/call-reset-next', [QueueController::class, 'resetCallNext']);
     Route::get('queues/current', [QueueController::class, 'current']);
     Route::get('queues/summary', [QueueController::class, 'summary']);
     Route::get('queues/history', [QueueController::class, 'history']);
