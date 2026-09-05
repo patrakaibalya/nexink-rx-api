@@ -4,7 +4,9 @@ namespace App\Jobs;
 
 use App\Models\ClinicalExtraction;
 use App\Models\DoctorDatabase;
+use App\Models\Prescription;
 use App\Services\ClinicalExtraction\ClinicalExtractionService;
+use App\Services\Prescription\PrescriptionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -12,6 +14,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ClinicalExtractionJob implements ShouldQueue
@@ -192,6 +195,41 @@ class ClinicalExtractionJob implements ShouldQueue
             $extraction->visit_id,
             []
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Auto-finalize Draft Prescription
+        |--------------------------------------------------------------------------
+        |
+        | The doctor already confirmed this extraction before it was sent to
+        | n8n, so once it comes back confirmed the draft prescription for
+        | this visit can be finalized automatically without another manual
+        | UI call.
+        |--------------------------------------------------------------------------
+        */
+
+        $prescription = Prescription::query()
+            ->where('visit_id', $extraction->visit_id)
+            ->where('status', 'draft')
+            ->latest('id')
+            ->first();
+
+        if ($prescription && $prescription->items()->exists()) {
+            try {
+                app(PrescriptionService::class)->finalize(
+                    $prescription->id
+                );
+            } catch (Throwable $exception) {
+                Log::warning(
+                    'Auto-finalize prescription failed after clinical extraction confirm.',
+                    [
+                        'prescription_id' => $prescription->id,
+                        'visit_id' => $extraction->visit_id,
+                        'error' => $exception->getMessage(),
+                    ]
+                );
+            }
+        }
     }
 
     public function failed(Throwable $exception): void
