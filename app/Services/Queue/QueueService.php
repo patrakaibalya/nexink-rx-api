@@ -217,7 +217,7 @@ class QueueService
                     ]);
                 }
 
-                if ($queue->status !== 'waiting') {
+                if (!in_array($queue->status, ['waiting', 'called', 'consulting'], true)) {
                     throw ValidationException::withMessages([
                         'queue_id' => [
                             "Cannot call patient with status "
@@ -226,9 +226,14 @@ class QueueService
                     ]);
                 }
 
+                if ($queue->status === 'consulting') {
+                    $this->discardQueueVisit($queue);
+                }
+
                 $queue->update([
                     'status' => 'called',
                     'called_at' => now(),
+                    'consultation_started_at' => null,
                 ]);
 
                 return $queue->fresh([
