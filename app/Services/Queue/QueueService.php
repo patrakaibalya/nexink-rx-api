@@ -3,9 +3,16 @@
 namespace App\Services\Queue;
 
 use App\Models\Clinic;
+use App\Models\ClinicalExtraction;
+use App\Models\DoctorHandwritingSample;
+use App\Models\Investigation;
+use App\Models\InvestigationDocument;
 use App\Models\Patient;
+use App\Models\Prescription;
 use App\Models\Queue;
+use App\Models\Visit;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class QueueService
@@ -249,7 +256,7 @@ class QueueService
                 $queue = Queue::query()
                     ->where('clinic_id', $clinicId)
                     ->whereDate('queue_date', $queueDate)
-                    ->where('status', 'called')
+                    ->whereIn('status', ['called', 'consulting'])
                     ->orderByDesc('called_at')
                     ->lockForUpdate()
                     ->first();
@@ -260,9 +267,14 @@ class QueueService
                     ]);
                 }
 
+                if ($queue->status === 'consulting') {
+                    $this->discardQueueVisit($queue);
+                }
+
                 $queue->update([
                     'status' => 'waiting',
                     'called_at' => null,
+                    'consultation_started_at' => null,
                 ]);
 
                 return $queue->fresh([
@@ -271,6 +283,76 @@ class QueueService
                 ]);
             }
         );
+    }
+
+    protected function discardQueueVisit(Queue $queue): void
+    {
+        $visit = Visit::query()
+            ->where('queue_id', $queue->id)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$visit) {
+            return;
+        }
+
+        if ($visit->status !== 'in_progress') {
+            throw ValidationException::withMessages([
+                'queue' => ['Consultation for this patient is already completed and cannot be reset.'],
+            ]);
+        }
+
+        $prescription = Prescription::query()
+            ->where('visit_id', $visit->id)
+            ->first();
+
+        if ($prescription && $prescription->status !== 'draft') {
+            throw ValidationException::withMessages([
+                'queue' => ['Prescription for this patient is already finalized and cannot be reset.'],
+            ]);
+        }
+
+        if ($prescription) {
+            DoctorHandwritingSample::query()
+                ->where('prescription_id', $prescription->id)
+                ->get()
+                ->each(function (DoctorHandwritingSample $sample) {
+                    if (
+                        $sample->ink_file_path
+                        && Storage::disk('local')->exists($sample->ink_file_path)
+                    ) {
+                        Storage::disk('local')->delete($sample->ink_file_path);
+                    }
+
+                    $sample->delete();
+                });
+
+            $prescription->items()->delete();
+            $prescription->forceDelete();
+        }
+
+        Investigation::query()
+            ->where('visit_id', $visit->id)
+            ->get()
+            ->each(function (Investigation $investigation) {
+                $investigation->documents
+                    ->each(function (InvestigationDocument $document) {
+                        if (Storage::disk('local')->exists($document->file_path)) {
+                            Storage::disk('local')->delete($document->file_path);
+                        }
+
+                        $document->delete();
+                    });
+
+                $investigation->items()->delete();
+                $investigation->forceDelete();
+            });
+
+        ClinicalExtraction::query()
+            ->where('visit_id', $visit->id)
+            ->forceDelete();
+
+        $visit->forceDelete();
     }
 
     public function current(int $clinicId): ?Queue

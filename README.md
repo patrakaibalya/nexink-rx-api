@@ -68,8 +68,13 @@ cd /var/www/nexink-rx-api
 
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE nexink_master.doctor_databases;
-TRUNCATE TABLE nexink_master.doctor_accounts;
+TRUNCATE TABLE doctor_db_1.appointments;
+TRUNCATE TABLE doctor_db_1.clinical_extractions;
+TRUNCATE TABLE doctor_db_1.doctor_handwriting_samples;
+TRUNCATE TABLE doctor_db_1.prescriptions;
+TRUNCATE TABLE doctor_db_1.prescription_items;
+TRUNCATE TABLE doctor_db_1.queues;
+TRUNCATE TABLE doctor_db_1.visits;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
