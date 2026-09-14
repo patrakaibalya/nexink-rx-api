@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GlobalMedicineLibrary\GlobalMedicineLibraryStoreRequest;
+use App\Jobs\SyncMedicineToQdrantJob;
 use App\Models\GlobalMedicineLibrary;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -52,6 +53,18 @@ class GlobalMedicineLibraryController extends Controller
     ): JsonResponse {
         $medicine = GlobalMedicineLibrary::create(
             $request->validated()
+        );
+
+        SyncMedicineToQdrantJob::dispatch(
+            $medicine->id,
+            $medicine->medicine_name,
+            $medicine->generic_name,
+            $medicine->composition,
+            $medicine->strength,
+            $medicine->dosage_form,
+            $medicine->manufacturer,
+            $medicine->description,
+            (bool) $medicine->is_active
         );
 
         return ApiResponse::created(

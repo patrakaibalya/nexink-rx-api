@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MedicineOrganization\MedicineOrganizationMedicineRequest;
+use App\Jobs\SyncMedicineToQdrantJob;
 use App\Models\MedicineOrganization;
 use App\Services\Medicine\MedicineLibraryProvisioningService;
 use App\Support\ApiResponse;
@@ -99,6 +100,18 @@ class OrganizationMedicineController extends Controller
         $medicine = DB::table($table)
             ->where('id', $medicineId)
             ->first();
+
+        SyncMedicineToQdrantJob::dispatch(
+            $medicine->id,
+            $medicine->medicine_name,
+            $medicine->generic_name,
+            $medicine->composition,
+            $medicine->strength,
+            $medicine->dosage_form,
+            $medicine->manufacturer,
+            $medicine->description,
+            (bool) $medicine->is_active
+        );
 
         return ApiResponse::created(
             message: 'Organization medicine created successfully.',

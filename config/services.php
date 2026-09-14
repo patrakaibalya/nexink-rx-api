@@ -64,6 +64,10 @@ return [
         'clinical_extraction_webhook' =>
         env('N8N_CLINICAL_EXTRACTION_WEBHOOK'),
 
+        'global_medicine_save_webhook' => env(
+            'N8N_GLOBAL_MEDICINE_SAVE_WEBHOOK'
+        ),
+
     ],
 
 ];

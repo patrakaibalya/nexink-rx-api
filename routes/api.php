@@ -38,6 +38,14 @@ Route::prefix('auth')->group(function () {
     Route::post('master/login', [MasterAuthController::class, 'login']); //Angular Web App
 });
 
+// Authenticated Android doctor
+Route::post('auth/web-login/approve', [WebLoginController::class, 'approve'])->middleware('auth:sanctum');
+
+Route::post(
+    'auth/web-login/complete',
+    [WebLoginController::class, 'complete']
+)->middleware('web.login.session');
+
 //Medicine organization APIs
 Route::middleware([
     'auth:sanctum',
@@ -76,19 +84,9 @@ Route::middleware([
 });
 
 
-// Authenticated Android doctor
-Route::post('auth/web-login/approve', [WebLoginController::class, 'approve'])->middleware('auth:sanctum');
-
-Route::post(
-    'auth/web-login/complete',
-    [WebLoginController::class, 'complete']
-)->middleware('web.login.session');
 
 
-// Doctor profile - Android + Web
-// Route::middleware('doctor.auth')->group(function () {
-//     Route::get('doctor/me', [DoctorAuthController::class, 'me']);
-// });
+
 
 //// Doctor-tenant APIs
 Route::middleware([
