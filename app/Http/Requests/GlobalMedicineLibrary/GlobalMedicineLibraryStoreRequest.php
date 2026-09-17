@@ -54,6 +54,18 @@ class GlobalMedicineLibraryStoreRequest extends FormRequest
                 'string',
             ],
 
+            'purchase_price' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'sale_price' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
             'is_active' => [
                 'nullable',
                 'boolean',

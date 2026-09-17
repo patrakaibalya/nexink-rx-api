@@ -29,6 +29,9 @@ class MedicineLibraryProvisioningService
 
             $table->text('description')->nullable();
 
+            $table->decimal('purchase_price', 10, 2)->nullable();
+            $table->decimal('sale_price', 10, 2)->nullable();
+
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();
