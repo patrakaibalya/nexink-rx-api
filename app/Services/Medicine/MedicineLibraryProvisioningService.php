@@ -32,6 +32,9 @@ class MedicineLibraryProvisioningService
             $table->decimal('purchase_price', 10, 2)->nullable();
             $table->decimal('sale_price', 10, 2)->nullable();
 
+            $table->unsignedInteger('unit')->nullable();
+            $table->string('unit_type')->nullable();
+
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();

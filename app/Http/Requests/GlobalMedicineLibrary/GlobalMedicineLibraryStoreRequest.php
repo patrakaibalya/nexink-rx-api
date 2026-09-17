@@ -66,6 +66,18 @@ class GlobalMedicineLibraryStoreRequest extends FormRequest
                 'min:0',
             ],
 
+            'unit' => [
+                'nullable',
+                'integer',
+                'min:0',
+            ],
+
+            'unit_type' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'is_active' => [
                 'nullable',
                 'boolean',

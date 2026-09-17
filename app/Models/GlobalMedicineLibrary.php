@@ -21,6 +21,8 @@ class GlobalMedicineLibrary extends Model
         'description',
         'purchase_price',
         'sale_price',
+        'unit',
+        'unit_type',
         'is_active',
     ];
 
@@ -29,6 +31,7 @@ class GlobalMedicineLibrary extends Model
         return [
             'purchase_price' => 'decimal:2',
             'sale_price' => 'decimal:2',
+            'unit' => 'integer',
             'is_active' => 'boolean',
         ];
     }
