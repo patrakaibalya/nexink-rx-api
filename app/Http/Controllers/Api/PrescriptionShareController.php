@@ -17,6 +17,32 @@ use Illuminate\Http\Request;
 
 class PrescriptionShareController extends Controller
 {
+    public function doctorList(Request $request): JsonResponse
+    {
+        $doctor = $request->user();
+
+        $shares = PrescriptionShare::query()
+            ->where('doctor_id', $doctor->id)
+            ->when(
+                $request->query('status'),
+                fn ($query, $status) => $query->where('status', $status)
+            )
+            ->when(
+                $request->query('organization_id'),
+                fn ($query, $organizationId) => $query->where('organization_id', $organizationId)
+            )
+            ->with('organization:id,organization_name')
+            ->latest('id')
+            ->paginate(20);
+
+        return ApiResponse::success(
+            message: 'Shared prescriptions retrieved successfully.',
+            data: [
+                'shares' => $shares,
+            ]
+        );
+    }
+
     public function doctorIndex(
         Request $request,
         int $prescriptionId
