@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MedicineOrganization\PrescriptionShareStatusRequest;
+use App\Models\ClinicalExtraction;
 use App\Models\DoctorHandwritingSample;
+use App\Models\DoctorMedicineSubscription;
+use App\Models\Prescription;
 use App\Models\PrescriptionShare;
 use App\Services\Doctor\DoctorHandwritingStrokeService;
 use App\Support\ApiResponse;
@@ -27,12 +30,59 @@ class PrescriptionShareController extends Controller
             ->latest('id')
             ->get();
 
+        $shareStatus = $this->resolveShareStatus(
+            $doctor->id,
+            $prescriptionId,
+            $shares->isNotEmpty()
+        );
+
         return ApiResponse::success(
             message: 'Prescription share status retrieved successfully.',
             data: [
+                'share_status' => $shareStatus,
                 'shares' => $shares,
             ]
         );
+    }
+
+    /**
+     * Explain why `shares` may be empty, so the doctor's UI can show
+     * something more useful than a blank list.
+     */
+    private function resolveShareStatus(
+        int $doctorId,
+        int $prescriptionId,
+        bool $hasShares
+    ): string {
+        if ($hasShares) {
+            return 'shared';
+        }
+
+        $hasApprovedSubscribers = DoctorMedicineSubscription::query()
+            ->where('doctor_id', $doctorId)
+            ->where('status', 'approved')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->exists();
+
+        if (!$hasApprovedSubscribers) {
+            return 'no_subscribers';
+        }
+
+        $prescription = Prescription::query()->find($prescriptionId);
+
+        if (!$prescription) {
+            return 'prescription_not_found';
+        }
+
+        $isConfirmed = ClinicalExtraction::query()
+            ->where('visit_id', $prescription->visit_id)
+            ->where('status', 'confirmed')
+            ->exists();
+
+        return $isConfirmed ? 'pending' : 'not_confirmed_yet';
     }
 
     public function index(Request $request): JsonResponse
