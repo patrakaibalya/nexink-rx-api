@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MedicineOrganization\MedicineOrganizationMedicineRequest;
 use App\Jobs\SyncMedicineToQdrantJob;
-use App\Models\MedicineOrganization;
 use App\Services\Medicine\MedicineLibraryProvisioningService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -16,19 +15,12 @@ class OrganizationMedicineController extends Controller
 {
     public function index(
         Request $request,
-        int $organizationId,
         MedicineLibraryProvisioningService $provisioningService
     ): JsonResponse {
-        $organization = MedicineOrganization::find($organizationId);
-
-        if (!$organization) {
-            return ApiResponse::notFound(
-                'Medicine organization not found.'
-            );
-        }
+        $organization = $request->user();
 
         $table = $provisioningService
-            ->getTableName($organizationId);
+            ->getTableName($organization->id);
 
         $query = DB::table($table);
 
@@ -79,19 +71,12 @@ class OrganizationMedicineController extends Controller
 
     public function store(
         MedicineOrganizationMedicineRequest $request,
-        int $organizationId,
         MedicineLibraryProvisioningService $provisioningService
     ): JsonResponse {
-        $organization = MedicineOrganization::find($organizationId);
-
-        if (!$organization) {
-            return ApiResponse::notFound(
-                'Medicine organization not found.'
-            );
-        }
+        $organization = $request->user();
 
         $table = $provisioningService
-            ->createForOrganization($organizationId);
+            ->createForOrganization($organization->id);
 
         $medicineId = DB::table($table)->insertGetId(
             $request->validated()
@@ -122,20 +107,14 @@ class OrganizationMedicineController extends Controller
     }
 
     public function show(
-        int $organizationId,
+        Request $request,
         int $medicineId,
         MedicineLibraryProvisioningService $provisioningService
     ): JsonResponse {
-        $organization = MedicineOrganization::find($organizationId);
-
-        if (!$organization) {
-            return ApiResponse::notFound(
-                'Medicine organization not found.'
-            );
-        }
+        $organization = $request->user();
 
         $table = $provisioningService
-            ->getTableName($organizationId);
+            ->getTableName($organization->id);
 
         $medicine = DB::table($table)
             ->where('id', $medicineId)
@@ -157,20 +136,13 @@ class OrganizationMedicineController extends Controller
 
     public function update(
         MedicineOrganizationMedicineRequest $request,
-        int $organizationId,
         int $medicineId,
         MedicineLibraryProvisioningService $provisioningService
     ): JsonResponse {
-        $organization = MedicineOrganization::find($organizationId);
-
-        if (!$organization) {
-            return ApiResponse::notFound(
-                'Medicine organization not found.'
-            );
-        }
+        $organization = $request->user();
 
         $table = $provisioningService
-            ->getTableName($organizationId);
+            ->getTableName($organization->id);
 
         $medicine = DB::table($table)
             ->where('id', $medicineId)
@@ -202,20 +174,14 @@ class OrganizationMedicineController extends Controller
     }
 
     public function destroy(
-        int $organizationId,
+        Request $request,
         int $medicineId,
         MedicineLibraryProvisioningService $provisioningService
     ): JsonResponse {
-        $organization = MedicineOrganization::find($organizationId);
-
-        if (!$organization) {
-            return ApiResponse::notFound(
-                'Medicine organization not found.'
-            );
-        }
+        $organization = $request->user();
 
         $table = $provisioningService
-            ->getTableName($organizationId);
+            ->getTableName($organization->id);
 
         $deleted = DB::table($table)
             ->where('id', $medicineId)

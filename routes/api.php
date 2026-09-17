@@ -63,6 +63,12 @@ Route::middleware([
     Route::get('shared-prescriptions/{shareId}/prescription-template/header-image', [PrescriptionShareController::class, 'headerImage']);
     Route::get('shared-prescriptions/{shareId}/prescription-template/footer-image', [PrescriptionShareController::class, 'footerImage']);
     Route::patch('shared-prescriptions/{shareId}/status', [PrescriptionShareController::class, 'updateStatus']);
+
+    Route::get('medicines', [OrganizationMedicineController::class, 'index']);
+    Route::post('medicines', [OrganizationMedicineController::class, 'store']);
+    Route::get('medicines/{medicineId}', [OrganizationMedicineController::class, 'show']);
+    Route::patch('medicines/{medicineId}', [OrganizationMedicineController::class, 'update']);
+    Route::delete('medicines/{medicineId}', [OrganizationMedicineController::class, 'destroy']);
 });
 
 // Master database APIs
@@ -76,13 +82,6 @@ Route::middleware([
     Route::get('medicine-organizations/{organizationId}', [MedicineOrganizationController::class, 'show']);
     Route::patch('medicine-organizations/{organizationId}', [MedicineOrganizationController::class, 'update']);
     Route::delete('medicine-organizations/{organizationId}', [MedicineOrganizationController::class, 'destroy']);
-
-    Route::get('medicine-organizations/{organizationId}/medicines', [OrganizationMedicineController::class, 'index']);
-    Route::post('medicine-organizations/{organizationId}/medicines', [OrganizationMedicineController::class, 'store']);
-    Route::get('medicine-organizations/{organizationId}/medicines/{medicineId}', [OrganizationMedicineController::class, 'show']);
-    Route::patch('medicine-organizations/{organizationId}/medicines/{medicineId}', [OrganizationMedicineController::class, 'update']);
-    Route::delete('medicine-organizations/{organizationId}/medicines/{medicineId}', [OrganizationMedicineController::class, 'destroy']);
-
 
     Route::get('global-medicines', [GlobalMedicineLibraryController::class, 'index']);
     Route::post('global-medicines', [GlobalMedicineLibraryController::class, 'store']);
