@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\MedicineOrganizationSubscriptionController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PrescriptionController;
+use App\Http\Controllers\Api\PrescriptionShareController;
 use App\Http\Controllers\Api\QueueController;
 use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\WebLoginController;
@@ -55,6 +56,11 @@ Route::middleware([
     Route::post('logout', [MedicineOrganizationAuthController::class, 'logout']);
     Route::get('subscription-requests', [MedicineOrganizationSubscriptionController::class, 'index']);
     Route::patch('subscription-requests/{subscriptionId}', [MedicineOrganizationSubscriptionController::class, 'update']);
+
+    Route::get('shared-prescriptions', [PrescriptionShareController::class, 'index']);
+    Route::get('shared-prescriptions/{shareId}', [PrescriptionShareController::class, 'show']);
+    Route::get('shared-prescriptions/{shareId}/handwriting/strokes', [PrescriptionShareController::class, 'handwritingStrokes']);
+    Route::patch('shared-prescriptions/{shareId}/status', [PrescriptionShareController::class, 'updateStatus']);
 });
 
 // Master database APIs
@@ -179,6 +185,7 @@ Route::middleware([
     Route::delete('prescriptions/{prescriptionId}', [PrescriptionController::class, 'destroy']);
     Route::get('prescriptions', [PrescriptionController::class, 'index']);
     Route::post('prescriptions/{prescriptionId}/finalize', [PrescriptionController::class, 'finalize']);
+    Route::get('prescriptions/{prescriptionId}/shares', [PrescriptionShareController::class, 'doctorIndex']);
 
     Route::get('investigations/{investigationId}', [InvestigationController::class, 'show']);
     Route::patch('investigations/{investigationId}', [InvestigationController::class, 'update']);

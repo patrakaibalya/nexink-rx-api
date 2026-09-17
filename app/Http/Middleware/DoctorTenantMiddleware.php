@@ -4,9 +4,9 @@ namespace App\Http\Middleware;
 
 use App\Models\DoctorAccount;
 use App\Support\ApiResponse;
+use App\Support\DoctorTenantConnector;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class DoctorTenantMiddleware
@@ -29,9 +29,7 @@ class DoctorTenantMiddleware
             );
         }
 
-        $doctorDatabase = $doctor->database;
-
-        if (!$doctorDatabase) {
+        if (!$doctor->database) {
             return ApiResponse::error(
                 'Doctor database configuration not found.',
                 null,
@@ -39,7 +37,7 @@ class DoctorTenantMiddleware
             );
         }
 
-        if ($doctorDatabase->status !== 'active') {
+        if ($doctor->database->status !== 'active') {
             return ApiResponse::error(
                 'Doctor database is not active.',
                 null,
@@ -47,26 +45,7 @@ class DoctorTenantMiddleware
             );
         }
 
-        config([
-            'database.connections.doctor' => [
-                'driver' => 'mysql',
-                'host' => $doctorDatabase->database_host,
-                'port' => $doctorDatabase->database_port,
-                'database' => $doctorDatabase->database_name,
-                'username' => $doctorDatabase->database_username,
-                'password' => $doctorDatabase->database_password,
-                'unix_socket' => '',
-                'charset' => 'utf8mb4',
-                'collation' => 'utf8mb4_unicode_ci',
-                'prefix' => '',
-                'prefix_indexes' => true,
-                'strict' => true,
-                'engine' => null,
-            ],
-        ]);
-
-        DB::purge('doctor');
-        DB::reconnect('doctor');
+        $doctorDatabase = DoctorTenantConnector::connect($doctor->id);
 
         app()->instance('current.doctor', $doctor);
         app()->instance('current.doctor.database', $doctorDatabase);

@@ -3,16 +3,15 @@
 namespace App\Jobs;
 
 use App\Models\ClinicalExtraction;
-use App\Models\DoctorDatabase;
 use App\Models\Prescription;
 use App\Services\ClinicalExtraction\ClinicalExtractionService;
 use App\Services\Prescription\PrescriptionService;
+use App\Support\DoctorTenantConnector;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -38,48 +37,19 @@ class ClinicalExtractionJob implements ShouldQueue
         |--------------------------------------------------------------------------
         */
 
-        $doctorDatabase = DoctorDatabase::query()
-            ->where('doctor_id', $this->doctorId)
-            ->first();
-
-        if (!$doctorDatabase) {
-            throw new \RuntimeException(
-                "Doctor database not found for doctor ID {$this->doctorId}."
-            );
-        }
-
-        if ($doctorDatabase->status !== 'active') {
-            throw new \RuntimeException(
-                "Doctor database is not active for doctor ID {$this->doctorId}."
-            );
-        }
-
         /*
         |--------------------------------------------------------------------------
         | Configure Doctor Tenant Connection
         |--------------------------------------------------------------------------
         */
 
-        config([
-            'database.connections.doctor' => [
-                'driver' => 'mysql',
-                'host' => $doctorDatabase->database_host,
-                'port' => $doctorDatabase->database_port,
-                'database' => $doctorDatabase->database_name,
-                'username' => $doctorDatabase->database_username,
-                'password' => $doctorDatabase->database_password,
-                'unix_socket' => '',
-                'charset' => 'utf8mb4',
-                'collation' => 'utf8mb4_unicode_ci',
-                'prefix' => '',
-                'prefix_indexes' => true,
-                'strict' => true,
-                'engine' => null,
-            ],
-        ]);
+        $doctorDatabase = DoctorTenantConnector::connect($this->doctorId);
 
-        DB::purge('doctor');
-        DB::reconnect('doctor');
+        if (!$doctorDatabase) {
+            throw new \RuntimeException(
+                "Doctor database not found or not active for doctor ID {$this->doctorId}."
+            );
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -193,7 +163,8 @@ class ClinicalExtractionJob implements ShouldQueue
 
         app(ClinicalExtractionService::class)->confirm(
             $extraction->visit_id,
-            []
+            [],
+            $this->doctorId
         );
 
         /*
@@ -240,34 +211,9 @@ class ClinicalExtractionJob implements ShouldQueue
         |--------------------------------------------------------------------------
         */
 
-        $doctorDatabase = DoctorDatabase::query()
-            ->where('doctor_id', $this->doctorId)
-            ->first();
-
-        if (!$doctorDatabase) {
+        if (!DoctorTenantConnector::connect($this->doctorId)) {
             return;
         }
-
-        config([
-            'database.connections.doctor' => [
-                'driver' => 'mysql',
-                'host' => $doctorDatabase->database_host,
-                'port' => $doctorDatabase->database_port,
-                'database' => $doctorDatabase->database_name,
-                'username' => $doctorDatabase->database_username,
-                'password' => $doctorDatabase->database_password,
-                'unix_socket' => '',
-                'charset' => 'utf8mb4',
-                'collation' => 'utf8mb4_unicode_ci',
-                'prefix' => '',
-                'prefix_indexes' => true,
-                'strict' => true,
-                'engine' => null,
-            ],
-        ]);
-
-        DB::purge('doctor');
-        DB::reconnect('doctor');
 
         ClinicalExtraction::query()
             ->whereKey($this->extractionId)

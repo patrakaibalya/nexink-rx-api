@@ -72,7 +72,8 @@ class ClinicalExtractionController extends Controller
     ): JsonResponse {
         $extraction = $clinicalExtractionService->confirm(
             $visitId,
-            $request->validated()
+            $request->validated(),
+            $request->user()->id
         );
 
         return ApiResponse::success(

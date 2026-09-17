@@ -2,6 +2,7 @@
 
 namespace App\Services\ClinicalExtraction;
 
+use App\Jobs\SharePrescriptionWithOrganizationsJob;
 use App\Models\ClinicalExtraction;
 use App\Models\Investigation;
 use App\Models\Prescription;
@@ -73,9 +74,10 @@ class ClinicalExtractionService
 
     public function confirm(
         int $visitId,
-        array $data
+        array $data,
+        ?int $doctorId = null
     ): ClinicalExtraction {
-        return DB::connection('doctor')->transaction(
+        $extraction = DB::connection('doctor')->transaction(
             function () use ($visitId, $data) {
 
                 $extraction = ClinicalExtraction::query()
@@ -267,6 +269,15 @@ class ClinicalExtractionService
                 ]);
             }
         );
+
+        if ($doctorId) {
+            SharePrescriptionWithOrganizationsJob::dispatch(
+                $extraction->id,
+                $doctorId
+            );
+        }
+
+        return $extraction;
     }
 
     public function reject(
