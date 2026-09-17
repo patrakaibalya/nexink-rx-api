@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MedicineOrganization\MedicineOrganizationStoreRequest;
 use App\Models\MedicineOrganization;
+use App\Services\Investigation\InvestigationLibraryProvisioningService;
 use App\Services\Medicine\MedicineLibraryProvisioningService;
+use App\Services\Procedure\ProcedureLibraryProvisioningService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
@@ -28,7 +30,9 @@ class MedicineOrganizationController extends Controller
 
     public function store(
         MedicineOrganizationStoreRequest $request,
-        MedicineLibraryProvisioningService $medicineLibraryProvisioningService
+        MedicineLibraryProvisioningService $medicineLibraryProvisioningService,
+        InvestigationLibraryProvisioningService $investigationLibraryProvisioningService,
+        ProcedureLibraryProvisioningService $procedureLibraryProvisioningService
     ): JsonResponse {
         $organization = MedicineOrganization::create([
             ...$request->validated(),
@@ -38,6 +42,12 @@ class MedicineOrganizationController extends Controller
         ]);
 
         $medicineLibraryProvisioningService
+            ->createForOrganization($organization->id);
+
+        $investigationLibraryProvisioningService
+            ->createForOrganization($organization->id);
+
+        $procedureLibraryProvisioningService
             ->createForOrganization($organization->id);
 
         return ApiResponse::created(

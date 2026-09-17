@@ -12,12 +12,16 @@ use App\Http\Controllers\Api\DoctorHandwritingCorrectionController;
 use App\Http\Controllers\Api\DoctorHandwritingSampleController;
 use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
+use App\Http\Controllers\Api\GlobalInvestigationLibraryController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
+use App\Http\Controllers\Api\GlobalProcedureLibraryController;
 use App\Http\Controllers\Api\InvestigationController;
 use App\Http\Controllers\Api\InvestigationDocumentController;
 use App\Http\Controllers\Api\MedicineOrganizationController;
 use App\Http\Controllers\Api\MedicineOrganizationSubscriptionController;
+use App\Http\Controllers\Api\OrganizationInvestigationController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
+use App\Http\Controllers\Api\OrganizationProcedureController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PrescriptionController;
 use App\Http\Controllers\Api\PrescriptionShareController;
@@ -69,6 +73,18 @@ Route::middleware([
     Route::get('medicines/{medicineId}', [OrganizationMedicineController::class, 'show']);
     Route::patch('medicines/{medicineId}', [OrganizationMedicineController::class, 'update']);
     Route::delete('medicines/{medicineId}', [OrganizationMedicineController::class, 'destroy']);
+
+    Route::get('investigations', [OrganizationInvestigationController::class, 'index']);
+    Route::post('investigations', [OrganizationInvestigationController::class, 'store']);
+    Route::get('investigations/{investigationId}', [OrganizationInvestigationController::class, 'show']);
+    Route::patch('investigations/{investigationId}', [OrganizationInvestigationController::class, 'update']);
+    Route::delete('investigations/{investigationId}', [OrganizationInvestigationController::class, 'destroy']);
+
+    Route::get('procedures', [OrganizationProcedureController::class, 'index']);
+    Route::post('procedures', [OrganizationProcedureController::class, 'store']);
+    Route::get('procedures/{procedureId}', [OrganizationProcedureController::class, 'show']);
+    Route::patch('procedures/{procedureId}', [OrganizationProcedureController::class, 'update']);
+    Route::delete('procedures/{procedureId}', [OrganizationProcedureController::class, 'destroy']);
 });
 
 // Master database APIs
@@ -88,6 +104,18 @@ Route::middleware([
     Route::get('global-medicines/{medicineId}', [GlobalMedicineLibraryController::class, 'show']);
     Route::patch('global-medicines/{medicineId}', [GlobalMedicineLibraryController::class, 'update']);
     Route::delete('global-medicines/{medicineId}', [GlobalMedicineLibraryController::class, 'destroy']);
+
+    Route::get('global-investigations', [GlobalInvestigationLibraryController::class, 'index']);
+    Route::post('global-investigations', [GlobalInvestigationLibraryController::class, 'store']);
+    Route::get('global-investigations/{investigationId}', [GlobalInvestigationLibraryController::class, 'show']);
+    Route::patch('global-investigations/{investigationId}', [GlobalInvestigationLibraryController::class, 'update']);
+    Route::delete('global-investigations/{investigationId}', [GlobalInvestigationLibraryController::class, 'destroy']);
+
+    Route::get('global-procedures', [GlobalProcedureLibraryController::class, 'index']);
+    Route::post('global-procedures', [GlobalProcedureLibraryController::class, 'store']);
+    Route::get('global-procedures/{procedureId}', [GlobalProcedureLibraryController::class, 'show']);
+    Route::patch('global-procedures/{procedureId}', [GlobalProcedureLibraryController::class, 'update']);
+    Route::delete('global-procedures/{procedureId}', [GlobalProcedureLibraryController::class, 'destroy']);
 });
 
 
