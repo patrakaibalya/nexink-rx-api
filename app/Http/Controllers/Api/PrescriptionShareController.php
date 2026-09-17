@@ -9,6 +9,7 @@ use App\Models\DoctorHandwritingSample;
 use App\Models\DoctorMedicineSubscription;
 use App\Models\Prescription;
 use App\Models\PrescriptionShare;
+use App\Services\Clinic\ClinicPrescriptionTemplateService;
 use App\Services\Doctor\DoctorHandwritingStrokeService;
 use App\Support\ApiResponse;
 use App\Support\DoctorTenantConnector;
@@ -219,6 +220,90 @@ class PrescriptionShareController extends Controller
             message: 'Original handwritten prescription retrieved successfully.',
             data: $strokes
         );
+    }
+
+    public function headerImage(
+        Request $request,
+        ClinicPrescriptionTemplateService $service,
+        int $shareId
+    ) {
+        $clinicId = $this->resolveShareClinicId($request, $shareId);
+
+        if ($clinicId instanceof JsonResponse) {
+            return $clinicId;
+        }
+
+        $template = $service->show($clinicId);
+
+        if (!$template || !$template->header_image_path) {
+            return ApiResponse::notFound(
+                'Prescription template header image not found.'
+            );
+        }
+
+        return $service->downloadHeaderImage($template);
+    }
+
+    public function footerImage(
+        Request $request,
+        ClinicPrescriptionTemplateService $service,
+        int $shareId
+    ) {
+        $clinicId = $this->resolveShareClinicId($request, $shareId);
+
+        if ($clinicId instanceof JsonResponse) {
+            return $clinicId;
+        }
+
+        $template = $service->show($clinicId);
+
+        if (!$template || !$template->footer_image_path) {
+            return ApiResponse::notFound(
+                'Prescription template footer image not found.'
+            );
+        }
+
+        return $service->downloadFooterImage($template);
+    }
+
+    /**
+     * Resolve the clinic behind a shared prescription, connecting to the
+     * owning doctor's tenant database first since the prescription and
+     * clinic records live there rather than in the master database.
+     */
+    private function resolveShareClinicId(
+        Request $request,
+        int $shareId
+    ): int|JsonResponse {
+        $organization = $request->user();
+
+        $share = PrescriptionShare::query()
+            ->where('organization_id', $organization->id)
+            ->find($shareId);
+
+        if (!$share) {
+            return ApiResponse::notFound(
+                'Shared prescription not found.'
+            );
+        }
+
+        if (!DoctorTenantConnector::connect($share->doctor_id)) {
+            return ApiResponse::error(
+                'Doctor database is not available.',
+                null,
+                503
+            );
+        }
+
+        $prescription = Prescription::query()->find($share->prescription_id);
+
+        if (!$prescription) {
+            return ApiResponse::notFound(
+                'Prescription not found.'
+            );
+        }
+
+        return $prescription->clinic_id;
     }
 
     public function updateStatus(

@@ -60,6 +60,8 @@ Route::middleware([
     Route::get('shared-prescriptions', [PrescriptionShareController::class, 'index']);
     Route::get('shared-prescriptions/{shareId}', [PrescriptionShareController::class, 'show']);
     Route::get('shared-prescriptions/{shareId}/handwriting/strokes', [PrescriptionShareController::class, 'handwritingStrokes']);
+    Route::get('shared-prescriptions/{shareId}/prescription-template/header-image', [PrescriptionShareController::class, 'headerImage']);
+    Route::get('shared-prescriptions/{shareId}/prescription-template/footer-image', [PrescriptionShareController::class, 'footerImage']);
     Route::patch('shared-prescriptions/{shareId}/status', [PrescriptionShareController::class, 'updateStatus']);
 });
 
