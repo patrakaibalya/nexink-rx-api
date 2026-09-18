@@ -29,6 +29,7 @@ class OrderDataProvisioningService
                 'converting',
                 'draft',
                 'conversion_failed',
+                'submitted',
                 'pending',
                 'processing',
                 'shipped',

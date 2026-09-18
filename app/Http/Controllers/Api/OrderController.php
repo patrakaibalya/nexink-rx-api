@@ -117,7 +117,7 @@ class OrderController extends Controller
             return ApiResponse::notFound('Order not found.');
         }
 
-        if (!in_array($order->status, ['draft', 'pending'], true)) {
+        if ($order->status !== 'draft') {
             return ApiResponse::error(
                 'Only draft orders can be submitted.',
                 null,
@@ -136,7 +136,7 @@ class OrderController extends Controller
         ]);
 
         $update = [
-            'status' => 'pending',
+            'status' => 'submitted',
             'updated_at' => now(),
         ];
 
