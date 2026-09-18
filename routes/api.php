@@ -93,6 +93,9 @@ Route::middleware([
     'master_admins',
 ])->prefix('master')->group(function () {
 
+    Route::get('me', [MasterAuthController::class, 'me']);
+    Route::post('logout', [MasterAuthController::class, 'logout']);
+
     Route::get('medicine-organizations', [MedicineOrganizationController::class, 'index']);
     Route::post('medicine-organizations', [MedicineOrganizationController::class, 'store']);
     Route::get('medicine-organizations/{organizationId}', [MedicineOrganizationController::class, 'show']);

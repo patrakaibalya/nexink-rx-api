@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\MasterLoginRequest;
 use App\Models\MasterAdmin;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class MasterAuthController extends Controller
@@ -50,6 +51,27 @@ class MasterAuthController extends Controller
                 'master' => $master->fresh(),
                 'token' => $token,
             ]
+        );
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        return ApiResponse::success(
+            message: 'Master profile retrieved successfully.',
+            data: [
+                'master' => $request->user(),
+            ]
+        );
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()
+            ->currentAccessToken()
+            ?->delete();
+
+        return ApiResponse::success(
+            message: 'Master logout successful.'
         );
     }
 }
