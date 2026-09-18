@@ -44,4 +44,9 @@ class MedicineOrganization extends Authenticatable
     {
         return 'medicine_library_' . $this->id;
     }
+
+    public function getOrderDataTable(): string
+    {
+        return 'order_data_' . $this->id;
+    }
 }

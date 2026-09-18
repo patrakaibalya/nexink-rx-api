@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DoctorHandwritingCorrectionController;
 use App\Http\Controllers\Api\DoctorHandwritingSampleController;
 use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
+use App\Http\Controllers\Api\DevN8nDemoController;
 use App\Http\Controllers\Api\GlobalInvestigationLibraryController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
 use App\Http\Controllers\Api\GlobalProcedureLibraryController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\InvestigationController;
 use App\Http\Controllers\Api\InvestigationDocumentController;
 use App\Http\Controllers\Api\MedicineOrganizationController;
 use App\Http\Controllers\Api\MedicineOrganizationSubscriptionController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationInvestigationController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
 use App\Http\Controllers\Api\OrganizationProcedureController;
@@ -42,6 +44,14 @@ Route::prefix('auth')->group(function () {
 
     Route::post('master/login', [MasterAuthController::class, 'login']); //Angular Web App
 });
+
+// Demo stand-in for the n8n order-conversion AI webhook, until that n8n
+// workflow is built. Unauthenticated because a real n8n webhook call is
+// server-to-server too. Remove once N8N_ORDER_CONVERSION_WEBHOOK points
+// at the real workflow.
+if (!app()->isProduction()) {
+    Route::post('dev/n8n-demo/order-conversion', [DevN8nDemoController::class, 'orderConversion']);
+}
 
 // Authenticated Android doctor
 Route::post('auth/web-login/approve', [WebLoginController::class, 'approve'])->middleware('auth:sanctum');
@@ -67,6 +77,11 @@ Route::middleware([
     Route::get('shared-prescriptions/{shareId}/prescription-template/header-image', [PrescriptionShareController::class, 'headerImage']);
     Route::get('shared-prescriptions/{shareId}/prescription-template/footer-image', [PrescriptionShareController::class, 'footerImage']);
     Route::patch('shared-prescriptions/{shareId}/status', [PrescriptionShareController::class, 'updateStatus']);
+    Route::post('shared-prescriptions/{shareId}/convert-to-order', [OrderController::class, 'convertToOrder']);
+
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::get('orders/{orderId}', [OrderController::class, 'show']);
+    Route::patch('orders/{orderId}/submit', [OrderController::class, 'submit']);
 
     Route::get('medicines', [OrganizationMedicineController::class, 'index']);
     Route::post('medicines', [OrganizationMedicineController::class, 'store']);

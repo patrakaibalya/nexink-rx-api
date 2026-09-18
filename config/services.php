@@ -68,6 +68,10 @@ return [
             'N8N_GLOBAL_MEDICINE_SAVE_WEBHOOK'
         ),
 
+        'order_conversion_webhook' => env(
+            'N8N_ORDER_CONVERSION_WEBHOOK'
+        ),
+
     ],
 
 ];

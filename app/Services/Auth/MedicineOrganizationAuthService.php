@@ -6,6 +6,7 @@ use App\Http\Requests\Auth\MedicineOrganizationRegisterRequest;
 use App\Models\MedicineOrganization;
 use App\Services\Investigation\InvestigationLibraryProvisioningService;
 use App\Services\Medicine\MedicineLibraryProvisioningService;
+use App\Services\Order\OrderDataProvisioningService;
 use App\Services\Procedure\ProcedureLibraryProvisioningService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -19,10 +20,13 @@ class MedicineOrganizationAuthService
 
     protected ProcedureLibraryProvisioningService $procedureLibraryProvisioningService;
 
+    protected OrderDataProvisioningService $orderDataProvisioningService;
+
     public function __construct(
         MedicineLibraryProvisioningService $medicineLibraryProvisioningService,
         InvestigationLibraryProvisioningService $investigationLibraryProvisioningService,
-        ProcedureLibraryProvisioningService $procedureLibraryProvisioningService
+        ProcedureLibraryProvisioningService $procedureLibraryProvisioningService,
+        OrderDataProvisioningService $orderDataProvisioningService
     ) {
         $this->medicineLibraryProvisioningService =
             $medicineLibraryProvisioningService;
@@ -32,6 +36,9 @@ class MedicineOrganizationAuthService
 
         $this->procedureLibraryProvisioningService =
             $procedureLibraryProvisioningService;
+
+        $this->orderDataProvisioningService =
+            $orderDataProvisioningService;
     }
 
 
@@ -109,6 +116,9 @@ class MedicineOrganizationAuthService
                 ->createForOrganization($organization->id);
 
             $this->procedureLibraryProvisioningService
+                ->createForOrganization($organization->id);
+
+            $this->orderDataProvisioningService
                 ->createForOrganization($organization->id);
         } catch (\Throwable $exception) {
             $organization->delete();
