@@ -118,12 +118,25 @@ class PrescriptionShareController extends Controller
 
         $shares = PrescriptionShare::query()
             ->where('organization_id', $organization->id)
+            ->with('doctor:id,name')
             ->when(
                 $request->query('status'),
                 fn ($query, $status) => $query->where('status', $status)
             )
+            ->when(
+                $request->query('doctor_id'),
+                fn ($query, $doctorId) => $query->where('doctor_id', $doctorId)
+            )
+            ->when(
+                $request->query('from_date'),
+                fn ($query, $fromDate) => $query->whereDate('shared_at', '>=', $fromDate)
+            )
+            ->when(
+                $request->query('to_date'),
+                fn ($query, $toDate) => $query->whereDate('shared_at', '<=', $toDate)
+            )
             ->latest('id')
-            ->paginate(20);
+            ->paginate($request->integer('per_page', 20));
 
         return ApiResponse::success(
             message: 'Shared prescriptions retrieved successfully.',

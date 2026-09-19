@@ -17,6 +17,12 @@ class MedicineOrganization extends Authenticatable
         'mobile',
         'contact_person',
         'address',
+        'city',
+        'state',
+        'pincode',
+        'gst_number',
+        'pan_number',
+        'drug_license_number',
         'password',
     ];
 

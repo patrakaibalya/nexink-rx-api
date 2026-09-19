@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\MedicineOrganizationSubscriptionController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationDashboardController;
 use App\Http\Controllers\Api\OrganizationInvestigationController;
+use App\Http\Controllers\Api\OrganizationReportController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
 use App\Http\Controllers\Api\OrganizationProcedureController;
 use App\Http\Controllers\Api\PatientController;
@@ -68,9 +69,13 @@ Route::middleware([
     'medicine_organizations',
 ])->prefix('med')->group(function () {
     Route::get('me', [MedicineOrganizationAuthController::class, 'me']);
+    Route::patch('me', [MedicineOrganizationAuthController::class, 'updateProfile']);
+    Route::patch('password', [MedicineOrganizationAuthController::class, 'changePassword']);
     Route::post('logout', [MedicineOrganizationAuthController::class, 'logout']);
 
     Route::get('dashboard/summary', [OrganizationDashboardController::class, 'summary']);
+
+    Route::get('reports/doctors', [OrganizationReportController::class, 'doctors']);
 
     Route::get('subscription-requests', [MedicineOrganizationSubscriptionController::class, 'index']);
     Route::patch('subscription-requests/{subscriptionId}', [MedicineOrganizationSubscriptionController::class, 'update']);

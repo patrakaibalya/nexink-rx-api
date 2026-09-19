@@ -38,6 +38,23 @@ class OrderController extends Controller
             });
         }
 
+        if ($request->filled('doctor_id')) {
+            $shareIds = PrescriptionShare::query()
+                ->where('organization_id', $organization->id)
+                ->where('doctor_id', $request->integer('doctor_id'))
+                ->pluck('id');
+
+            $query->whereIn('prescription_share_id', $shareIds);
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->string('from_date')->toString());
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->string('to_date')->toString());
+        }
+
         $orders = $query
             ->latest('id')
             ->paginate($request->integer('per_page', 20));
