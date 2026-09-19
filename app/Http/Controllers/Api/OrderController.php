@@ -38,6 +38,10 @@ class OrderController extends Controller
             });
         }
 
+        if ($request->filled('order_ref')) {
+            $query->where('order_ref_id', 'like', '%' . $request->string('order_ref')->toString() . '%');
+        }
+
         if ($request->filled('doctor_id')) {
             $shareIds = PrescriptionShare::query()
                 ->where('organization_id', $organization->id)

@@ -135,6 +135,10 @@ class PrescriptionShareController extends Controller
                 $request->query('to_date'),
                 fn ($query, $toDate) => $query->whereDate('shared_at', '<=', $toDate)
             )
+            ->when(
+                $request->query('search'),
+                fn ($query, $search) => $query->where('patient_snapshot', 'like', "%{$search}%")
+            )
             ->latest('id')
             ->paginate($request->integer('per_page', 20));
 
