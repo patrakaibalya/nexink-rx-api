@@ -214,12 +214,14 @@ class OrganizationDashboardService
     {
         return PrescriptionShare::query()
             ->where('organization_id', $organizationId)
+            ->with('doctor:id,name')
             ->when($fromDate, fn ($query) => $query->whereDate('shared_at', '>=', $fromDate))
             ->when($toDate, fn ($query) => $query->whereDate('shared_at', '<=', $toDate))
             ->latest('shared_at')
             ->limit(self::RECENT_PRESCRIPTIONS_LIMIT)
             ->get([
                 'id',
+                'doctor_id',
                 'patient_snapshot',
                 'status',
                 'shared_at',
@@ -227,6 +229,7 @@ class OrganizationDashboardService
             ->map(fn (PrescriptionShare $share) => [
                 'id' => $share->id,
                 'patient_name' => $share->patient_snapshot['name'] ?? null,
+                'doctor_name' => $share->doctor?->name,
                 'status' => $share->status,
                 'shared_at' => $share->shared_at?->toIso8601String(),
             ])
