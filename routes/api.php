@@ -76,6 +76,7 @@ Route::middleware([
     Route::get('dashboard/summary', [OrganizationDashboardController::class, 'summary']);
 
     Route::get('reports/doctors', [OrganizationReportController::class, 'doctors']);
+    Route::get('reports/unrecognised-medicines', [OrganizationReportController::class, 'unrecognisedMedicines']);
 
     Route::get('subscription-requests', [MedicineOrganizationSubscriptionController::class, 'index']);
     Route::patch('subscription-requests/{subscriptionId}', [MedicineOrganizationSubscriptionController::class, 'update']);

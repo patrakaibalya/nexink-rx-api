@@ -19,6 +19,11 @@ class ClinicalExtractionConfirmRequest extends FormRequest
                 'array',
             ],
 
+            'symptoms' => [
+                'sometimes',
+                'array',
+            ],
+
             'medicines' => [
                 'sometimes',
                 'array',

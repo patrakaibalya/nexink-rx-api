@@ -100,6 +100,7 @@ class ClinicalExtractionService
                 foreach (
                     [
                         'diagnoses',
+                        'symptoms',
                         'medicines',
                         'investigations',
                         'instructions',
