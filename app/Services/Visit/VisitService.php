@@ -495,6 +495,88 @@ class VisitService
         );
     }
 
+    /**
+     * Resume review of an emergency-finished (unverified) prescription:
+     * flip the visit back to in_progress and the prescription back to
+     * draft so the normal re-verify/AI-reformat/clinical-extraction/
+     * complete pipeline (unchanged) can run again on it. The already
+     * completed appointment/queue are left untouched — this is the
+     * doctor correcting a document, not a new consultation.
+     */
+    public function reopen(int $visitId): Visit
+    {
+        return DB::connection('doctor')->transaction(
+            function () use ($visitId) {
+
+                $visit = Visit::query()
+                    ->lockForUpdate()
+                    ->find($visitId);
+
+                if (!$visit) {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'Visit not found.',
+                        ],
+                    ]);
+                }
+
+                if ($visit->status !== 'completed') {
+                    throw ValidationException::withMessages([
+                        'visit' => [
+                            'Only a completed visit can be reopened for review.',
+                        ],
+                    ]);
+                }
+
+                $prescription = Prescription::query()
+                    ->lockForUpdate()
+                    ->where('visit_id', $visit->id)
+                    ->where('status', 'unverified')
+                    ->latest('id')
+                    ->first();
+
+                if (!$prescription) {
+                    throw ValidationException::withMessages([
+                        'visit' => [
+                            'This visit has no unverified prescription to reopen.',
+                        ],
+                    ]);
+                }
+
+                $existingVisit = Visit::query()
+                    ->where('clinic_id', $visit->clinic_id)
+                    ->where('patient_id', $visit->patient_id)
+                    ->where('status', 'in_progress')
+                    ->first();
+
+                if ($existingVisit) {
+                    throw ValidationException::withMessages([
+                        'visit' => [
+                            'This patient already has another in-progress visit.',
+                        ],
+                    ]);
+                }
+
+                $visit->status = 'in_progress';
+                $visit->completed_at = null;
+
+                $visit->save();
+
+                $prescription->update([
+                    'status' => 'draft',
+                ]);
+
+                return $visit->fresh([
+                    'clinic',
+                    'patient',
+                    'appointment',
+                    'queue',
+                    'prescription',
+                ]);
+            }
+        );
+    }
+
     public function direct(array $data): Visit
     {
         return DB::connection('doctor')->transaction(

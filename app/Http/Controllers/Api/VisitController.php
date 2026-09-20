@@ -115,6 +115,20 @@ class VisitController extends Controller
         );
     }
 
+    public function reopen(
+        VisitService $visitService,
+        int $visitId
+    ): JsonResponse {
+        $visit = $visitService->reopen($visitId);
+
+        return ApiResponse::success(
+            message: 'Visit reopened for review.',
+            data: [
+                'visit' => $visit,
+            ]
+        );
+    }
+
     public function direct(
         DirectVisitRequest $request,
         VisitService $visitService

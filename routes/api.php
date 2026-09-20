@@ -229,6 +229,7 @@ Route::middleware([
     Route::post('visits/{visitId}/prescription', [PrescriptionController::class, 'createForVisit']);
     Route::patch('visits/{visitId}/complete', [VisitController::class, 'complete']);
     Route::patch('visits/{visitId}/emergency-complete', [VisitController::class, 'emergencyComplete']); //Finished button: skip review, save as unverified
+    Route::patch('visits/{visitId}/reopen', [VisitController::class, 'reopen']); //Resume review of an unverified prescription: re-runs steps 4-12
     Route::get('visits/{visitId}', [VisitController::class, 'show']);
     Route::patch('visits/{visitId}', [VisitController::class, 'update']);
 
