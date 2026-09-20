@@ -5,6 +5,7 @@ namespace App\Services\Appointment;
 use App\Models\Appointment;
 use App\Models\Clinic;
 use App\Models\Patient;
+use App\Models\Prescription;
 use App\Models\Queue;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -785,6 +786,10 @@ class AppointmentService
 
     public function dashboardSummary(): array
     {
+        $unverifiedPrescriptions = Prescription::query()
+            ->where('status', 'unverified')
+            ->count();
+
         $clinic = Clinic::query()
             ->select([
                 'id',
@@ -802,6 +807,7 @@ class AppointmentService
                 'completed' => 0,
                 'cancelled' => 0,
                 'no_show' => 0,
+                'unverified_prescriptions' => $unverifiedPrescriptions,
             ];
         }
 
@@ -827,6 +833,7 @@ class AppointmentService
             'completed' => (int) ($counts['completed'] ?? 0),
             'cancelled' => (int) ($counts['cancelled'] ?? 0),
             'no_show' => (int) ($counts['no_show'] ?? 0),
+            'unverified_prescriptions' => $unverifiedPrescriptions,
         ];
     }
 }

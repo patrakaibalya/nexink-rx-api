@@ -385,6 +385,116 @@ class VisitService
         );
     }
 
+    /**
+     * Emergency shortcut: complete the visit and mark its draft
+     * prescription "unverified" without any AI reformat/finalize step,
+     * so the doctor can move on immediately and correct it later.
+     */
+    public function emergencyComplete(
+        int $visitId,
+        array $data
+    ): Visit {
+        return DB::connection('doctor')->transaction(
+            function () use ($visitId, $data) {
+
+                $visit = Visit::query()
+                    ->lockForUpdate()
+                    ->find($visitId);
+
+                if (!$visit) {
+                    throw ValidationException::withMessages([
+                        'visit_id' => [
+                            'Visit not found.',
+                        ],
+                    ]);
+                }
+
+                if ($visit->status !== 'in_progress') {
+                    throw ValidationException::withMessages([
+                        'visit' => [
+                            'Only an in-progress visit can be completed.',
+                        ],
+                    ]);
+                }
+
+                $prescription = Prescription::query()
+                    ->lockForUpdate()
+                    ->where('visit_id', $visit->id)
+                    ->where('status', 'draft')
+                    ->latest('id')
+                    ->first();
+
+                if (!$prescription) {
+                    throw ValidationException::withMessages([
+                        'visit' => [
+                            'This visit has no draft prescription to finish.',
+                        ],
+                    ]);
+                }
+
+                if (array_key_exists('clinical_notes', $data)) {
+                    $visit->clinical_notes = $data['clinical_notes'];
+                }
+
+                $visit->status = 'completed';
+                $visit->completed_at = now();
+
+                $visit->save();
+
+                $prescription->update([
+                    'status' => 'unverified',
+                ]);
+
+                /*
+            |--------------------------------------------------------------------------
+            | Complete linked appointment
+            |--------------------------------------------------------------------------
+            */
+
+                if ($visit->appointment_id) {
+                    $appointment = Appointment::query()
+                        ->lockForUpdate()
+                        ->find($visit->appointment_id);
+
+                    if (
+                        $appointment
+                        && $appointment->status === 'arrived'
+                    ) {
+                        $appointment->update([
+                            'status' => 'completed',
+                            'completed_at' => now(),
+                        ]);
+                    }
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Complete linked queue
+            |--------------------------------------------------------------------------
+            */
+
+                if ($visit->queue_id) {
+                    $queue = Queue::query()
+                        ->lockForUpdate()
+                        ->find($visit->queue_id);
+
+                    if ($queue) {
+                        $queue->update([
+                            'status' => 'completed',
+                        ]);
+                    }
+                }
+
+                return $visit->fresh([
+                    'clinic',
+                    'patient',
+                    'appointment',
+                    'queue',
+                ]);
+            }
+        );
+    }
+
     public function direct(array $data): Visit
     {
         return DB::connection('doctor')->transaction(

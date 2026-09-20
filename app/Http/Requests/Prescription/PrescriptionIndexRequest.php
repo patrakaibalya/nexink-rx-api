@@ -29,7 +29,7 @@ class PrescriptionIndexRequest extends FormRequest
             'status' => [
                 'nullable',
                 'string',
-                'in:draft,final,cancelled',
+                'in:draft,unverified,final,cancelled',
             ],
 
             'date' => [

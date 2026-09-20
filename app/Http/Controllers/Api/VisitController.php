@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Visit\DirectVisitRequest;
 use App\Http\Requests\Visit\VisitCompleteRequest;
+use App\Http\Requests\Visit\VisitEmergencyCompleteRequest;
 use App\Http\Requests\Visit\VisitIndexRequest;
 use App\Http\Requests\Visit\VisitStartRequest;
 use App\Http\Requests\Visit\VisitUpdateRequest;
@@ -90,6 +91,24 @@ class VisitController extends Controller
 
         return ApiResponse::success(
             message: 'Consultation completed successfully.',
+            data: [
+                'visit' => $visit,
+            ]
+        );
+    }
+
+    public function emergencyComplete(
+        VisitEmergencyCompleteRequest $request,
+        VisitService $visitService,
+        int $visitId
+    ): JsonResponse {
+        $visit = $visitService->emergencyComplete(
+            $visitId,
+            $request->validated()
+        );
+
+        return ApiResponse::success(
+            message: 'Consultation finished. Prescription saved as unverified for later review.',
             data: [
                 'visit' => $visit,
             ]
