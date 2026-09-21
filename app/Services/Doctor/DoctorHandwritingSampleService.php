@@ -48,6 +48,35 @@ class DoctorHandwritingSampleService
             prescriptionId: $prescriptionId
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Upsert: a sample for this doctor/type/prescription may already exist
+        | (e.g. saved once during an emergency finish, then saved again after
+        | the prescription is reopened for review) — update it in place
+        | instead of creating a duplicate row with a stale ink_file_path.
+        |--------------------------------------------------------------------------
+        */
+
+        $existing = $this->index(
+            doctorId: $doctorId,
+            sampleType: $sampleType,
+            prescriptionId: $prescriptionId
+        );
+
+        if ($existing) {
+            $updated = $this->update(
+                doctorId: $doctorId,
+                sampleType: $sampleType,
+                prescriptionId: $prescriptionId,
+                data: $data,
+                inkFile: $inkFile
+            );
+
+            // $existing was just found by the same lookup update() uses
+            // internally, so it cannot legitimately return null here.
+            return $updated ?? $existing;
+        }
+
         return DB::connection('doctor')->transaction(
             function () use (
                 $doctorId,
