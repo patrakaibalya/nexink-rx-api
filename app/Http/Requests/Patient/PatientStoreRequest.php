@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Patient;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PatientStoreRequest extends FormRequest
 {
@@ -66,6 +67,41 @@ class PatientStoreRequest extends FormRequest
                 'numeric',
                 'min:0',
                 'max:999.99',
+            ],
+
+            'is_diabetic' => [
+                'nullable',
+                'boolean',
+            ],
+
+            'diabetic_result' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'blood_pressure' => [
+                'nullable',
+                'string',
+                Rule::in(['high', 'low', 'normal']),
+            ],
+
+            'blood_pressure_result' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'uid_aadhar_no' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+
+            'thyroid_result' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
         ];
     }

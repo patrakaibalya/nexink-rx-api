@@ -22,6 +22,12 @@ class Patient extends Model
         'address',
         'weight',
         'height',
+        'is_diabetic',
+        'diabetic_result',
+        'blood_pressure',
+        'blood_pressure_result',
+        'uid_aadhar_no',
+        'thyroid_result',
     ];
 
     protected function casts(): array
@@ -30,6 +36,7 @@ class Patient extends Model
             'date_of_birth' => 'date',
             'weight' => 'decimal:2',
             'height' => 'decimal:2',
+            'is_diabetic' => 'boolean',
         ];
     }
 
