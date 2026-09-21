@@ -150,9 +150,6 @@ Route::middleware([
 
 
 
-
-
-
 //// Doctor-tenant APIs
 Route::middleware([
     'doctor.auth',

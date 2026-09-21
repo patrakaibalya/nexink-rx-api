@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Doctor\MedicineOrganizationFavoriteRequest;
+use App\Http\Requests\Doctor\MedicineOrganizationSubscriptionIndexRequest;
 use App\Http\Requests\Doctor\MedicineOrganizationSubscriptionRequest;
 use App\Models\DoctorMedicineSubscription;
 use App\Models\MedicineOrganization;
@@ -13,12 +14,17 @@ use Illuminate\Http\Request;
 
 class DoctorMedicineOrganizationController extends Controller
 {
-    public function index(): JsonResponse
-    {
-        $doctor = request()->user();
+    public function index(
+        MedicineOrganizationSubscriptionIndexRequest $request
+    ): JsonResponse {
+        $doctor = $request->user();
 
         $subscriptions = DoctorMedicineSubscription::query()
             ->where('doctor_id', $doctor->id)
+            ->when(
+                $request->validated('status'),
+                fn ($query, $status) => $query->where('status', $status)
+            )
             ->with('organization')
             ->latest('id')
             ->paginate(20);
