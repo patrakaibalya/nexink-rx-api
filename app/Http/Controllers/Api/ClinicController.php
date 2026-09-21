@@ -7,9 +7,12 @@ use App\Http\Requests\Clinic\ClinicStoreRequest;
 use App\Http\Requests\Clinic\ClinicUpdateRequest;
 use App\Http\Requests\Clinic\ClinicWorkingHoursRequest;
 use App\Models\Clinic;
+use App\Models\DoctorMedicineSubscription;
 use App\Services\Clinic\ClinicService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ClinicController extends Controller
 {
@@ -29,9 +32,14 @@ class ClinicController extends Controller
 
     public function store(ClinicStoreRequest $request): JsonResponse
     {
-        $clinic = Clinic::create(
-            $request->validated()
+        $data = $request->validated();
+
+        $this->assertActivePricingOrganizationIsSubscribed(
+            $request,
+            $data['active_pricing_organization_id'] ?? null
         );
+
+        $clinic = Clinic::create($data);
 
         return ApiResponse::created(
             message: 'Clinic created successfully.',
@@ -71,9 +79,16 @@ class ClinicController extends Controller
             );
         }
 
-        $clinic->update(
-            $request->validated()
-        );
+        $data = $request->validated();
+
+        if (array_key_exists('active_pricing_organization_id', $data)) {
+            $this->assertActivePricingOrganizationIsSubscribed(
+                $request,
+                $data['active_pricing_organization_id']
+            );
+        }
+
+        $clinic->update($data);
 
         return ApiResponse::success(
             message: 'Clinic updated successfully.',
@@ -81,6 +96,40 @@ class ClinicController extends Controller
                 'clinic' => $clinic->fresh(),
             ]
         );
+    }
+
+    /**
+     * A clinic's active pricing organization must be one of the doctor's
+     * own approved, non-expired subscriptions — it supplies medicine,
+     * investigation and procedure pricing for every visit billed there.
+     */
+    private function assertActivePricingOrganizationIsSubscribed(
+        Request $request,
+        ?int $organizationId
+    ): void {
+        if ($organizationId === null) {
+            return;
+        }
+
+        $doctor = $request->user();
+
+        $subscription = DoctorMedicineSubscription::query()
+            ->where('doctor_id', $doctor->id)
+            ->where('organization_id', $organizationId)
+            ->where('status', 'approved')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->exists();
+
+        if (!$subscription) {
+            throw ValidationException::withMessages([
+                'active_pricing_organization_id' => [
+                    'You must have an approved subscription to this organization before selecting it as the pricing source.',
+                ],
+            ]);
+        }
     }
 
     public function toggleStatus(int $clinicId): JsonResponse

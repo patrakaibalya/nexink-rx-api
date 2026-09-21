@@ -6,6 +6,7 @@ use App\Jobs\SharePrescriptionWithOrganizationsJob;
 use App\Models\ClinicalExtraction;
 use App\Models\Investigation;
 use App\Models\Prescription;
+use App\Models\Procedure;
 use App\Models\Visit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -103,6 +104,7 @@ class ClinicalExtractionService
                         'symptoms',
                         'medicines',
                         'investigations',
+                        'procedures',
                         'instructions',
                         'follow_up',
                         'other',
@@ -245,6 +247,36 @@ class ClinicalExtractionService
                         $investigation->items()->create([
                             'test_name' => $item['name'],
                             'test_type' => $item['type'],
+                            'instructions' => $item['instructions'] ?? null,
+                            'sort_order' => $index,
+                        ]);
+                    }
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Create Procedure
+            |--------------------------------------------------------------------------
+            */
+
+                $procedures = $payload['procedures'] ?? [];
+
+                if (!empty($procedures)) {
+
+                    $procedure = Procedure::create([
+                        'clinic_id' => $extraction->clinic_id,
+                        'patient_id' => $extraction->patient_id,
+                        'visit_id' => $extraction->visit_id,
+                        'procedure_date' => now(
+                            $extraction->clinic->timezone
+                        )->toDateString(),
+                        'status' => 'ordered',
+                        'notes' => null,
+                    ]);
+
+                    foreach ($procedures as $index => $item) {
+                        $procedure->items()->create([
+                            'procedure_name' => $item['name'],
                             'instructions' => $item['instructions'] ?? null,
                             'sort_order' => $index,
                         ]);

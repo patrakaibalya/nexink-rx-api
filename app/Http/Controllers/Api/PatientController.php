@@ -117,6 +117,11 @@ class PatientController extends Controller
                         ->with('items')
                         ->latest('id');
                 },
+                'procedures' => function ($query) {
+                    $query
+                        ->with('items')
+                        ->latest('id');
+                },
             ])
             ->find($patientId);
 

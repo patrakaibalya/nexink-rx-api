@@ -68,4 +68,9 @@ class Visit extends Model
     {
         return $this->hasMany(Investigation::class);
     }
+
+    public function procedures()
+    {
+        return $this->hasMany(Procedure::class);
+    }
 }

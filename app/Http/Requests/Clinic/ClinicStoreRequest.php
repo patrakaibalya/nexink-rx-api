@@ -66,6 +66,20 @@ class ClinicStoreRequest extends FormRequest
                 'sometimes',
                 'boolean',
             ],
+
+            'consultation_fee' => [
+                'sometimes',
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999.99',
+            ],
+
+            'active_pricing_organization_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+            ],
         ];
     }
 }

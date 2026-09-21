@@ -10,6 +10,8 @@ use App\Models\Investigation;
 use App\Models\InvestigationDocument;
 use App\Models\Patient;
 use App\Models\Prescription;
+use App\Models\Procedure;
+use App\Models\ProcedureDocument;
 use App\Models\Queue;
 use App\Models\Visit;
 use Illuminate\Support\Facades\DB;
@@ -207,6 +209,7 @@ class VisitService
                 'prescription',
                 'clinicalExtractions',
                 'investigations',
+                'procedures',
             ])
             ->whereDate(
                 'visit_date',
@@ -744,6 +747,29 @@ class VisitService
 
                         $investigation->items()->delete();
                         $investigation->forceDelete();
+                    });
+
+                Procedure::query()
+                    ->where('visit_id', $visit->id)
+                    ->get()
+                    ->each(function (Procedure $procedure) {
+                        $procedure->documents
+                            ->each(function (ProcedureDocument $document) {
+                                if (
+                                    Storage::disk('local')->exists(
+                                        $document->file_path
+                                    )
+                                ) {
+                                    Storage::disk('local')->delete(
+                                        $document->file_path
+                                    );
+                                }
+
+                                $document->delete();
+                            });
+
+                        $procedure->items()->delete();
+                        $procedure->forceDelete();
                     });
 
                 ClinicalExtraction::query()

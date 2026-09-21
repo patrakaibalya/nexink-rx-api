@@ -29,6 +29,8 @@ use App\Http\Controllers\Api\OrganizationProcedureController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PrescriptionController;
 use App\Http\Controllers\Api\PrescriptionShareController;
+use App\Http\Controllers\Api\ProcedureController;
+use App\Http\Controllers\Api\ProcedureDocumentController;
 use App\Http\Controllers\Api\QueueController;
 use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\WebLoginController;
@@ -255,6 +257,15 @@ Route::middleware([
     Route::post('investigations/{investigationId}/documents', [InvestigationDocumentController::class, 'store']);
     Route::get('investigations/{investigationId}/documents/{documentId}/file', [InvestigationDocumentController::class, 'file']);
     Route::delete('investigations/{investigationId}/documents/{documentId}', [InvestigationDocumentController::class, 'destroy']);
+
+    Route::get('procedures/{procedureId}', [ProcedureController::class, 'show']);
+    Route::patch('procedures/{procedureId}', [ProcedureController::class, 'update']);
+    Route::delete('procedures/{procedureId}', [ProcedureController::class, 'destroy']);
+    Route::get('procedures', [ProcedureController::class, 'index']);
+    Route::post('procedures/{procedureId}/complete', [ProcedureController::class, 'complete']);
+    Route::post('procedures/{procedureId}/documents', [ProcedureDocumentController::class, 'store']);
+    Route::get('procedures/{procedureId}/documents/{documentId}/file', [ProcedureDocumentController::class, 'file']);
+    Route::delete('procedures/{procedureId}/documents/{documentId}', [ProcedureDocumentController::class, 'destroy']);
 
     Route::get('medicine-organizations', [DoctorMedicineOrganizationController::class, 'index']);
     Route::get('all-medicine-organizations', [DoctorMedicineOrganizationController::class, 'allOrganizations']);

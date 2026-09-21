@@ -23,6 +23,8 @@ class Clinic extends Model
         'timezone',
         'is_active',
         'appointment_duration_minutes',
+        'consultation_fee',
+        'active_pricing_organization_id',
     ];
 
     protected function casts(): array
@@ -30,11 +32,20 @@ class Clinic extends Model
         return [
             'is_active' => 'boolean',
             'appointment_duration_minutes' => 'integer',
+            'consultation_fee' => 'decimal:2',
         ];
     }
 
     public function workingHours()
     {
         return $this->hasMany(ClinicWorkingHour::class);
+    }
+
+    public function activePricingOrganization()
+    {
+        return $this->belongsTo(
+            MedicineOrganization::class,
+            'active_pricing_organization_id'
+        );
     }
 }

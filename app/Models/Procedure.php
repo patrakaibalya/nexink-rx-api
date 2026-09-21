@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Procedure extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $connection = 'doctor';
+
+    protected $fillable = [
+        'clinic_id',
+        'patient_id',
+        'visit_id',
+        'procedure_date',
+        'status',
+        'notes',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'procedure_date' => 'date',
+        ];
+    }
+
+    public function clinic()
+    {
+        return $this->belongsTo(Clinic::class);
+    }
+
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
+    public function visit()
+    {
+        return $this->belongsTo(Visit::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(ProcedureItem::class)
+            ->orderBy('sort_order');
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(ProcedureDocument::class)
+            ->latest('id');
+    }
+}

@@ -97,6 +97,8 @@ class SharePrescriptionWithOrganizationsJob implements ShouldQueue
             'diagnoses' => $extraction->payload['diagnoses'] ?? [],
             'symptoms' => $extraction->payload['symptoms'] ?? [],
             'medicines' => $extraction->payload['medicines'] ?? [],
+            'investigations' => $extraction->payload['investigations'] ?? [],
+            'procedures' => $extraction->payload['procedures'] ?? [],
             'instructions' => $extraction->payload['instructions'] ?? [],
             'other' => $extraction->payload['other'] ?? [],
             'follow_up' => $extraction->payload['follow_up'] ?? null,
