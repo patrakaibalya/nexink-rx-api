@@ -11,10 +11,13 @@ use App\Models\Prescription;
 use App\Models\PrescriptionShare;
 use App\Services\Clinic\ClinicPrescriptionTemplateService;
 use App\Services\Doctor\DoctorHandwritingStrokeService;
+use App\Services\Order\OrderDataProvisioningService;
 use App\Support\ApiResponse;
 use App\Support\DoctorTenantConnector;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PrescriptionShareController extends Controller
 {
@@ -38,6 +41,87 @@ class PrescriptionShareController extends Controller
 
         return ApiResponse::success(
             message: 'Shared prescriptions retrieved successfully.',
+            data: [
+                'shares' => $shares,
+            ]
+        );
+    }
+
+    /**
+     * Shares a doctor sent out that have not yet resulted in a submitted
+     * order — either the organization never converted it, or it's still
+     * sitting in draft. Order data lives in per-organization tables
+     * (order_data_{organizationId}), so it can't be joined in one query;
+     * this looks up each organization the doctor shared with separately.
+     */
+    public function doctorPendingOrders(
+        Request $request,
+        OrderDataProvisioningService $provisioningService
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $doctorShares = PrescriptionShare::query()
+            ->where('doctor_id', $doctor->id)
+            ->when(
+                $request->query('organization_id'),
+                fn ($query, $organizationId) => $query->where('organization_id', $organizationId)
+            )
+            ->get(['id', 'organization_id']);
+
+        $shareIdsByOrganization = $doctorShares
+            ->groupBy('organization_id')
+            ->map(fn ($group) => $group->pluck('id'));
+
+        $orderInfoByShareId = [];
+
+        foreach ($shareIdsByOrganization as $organizationId => $shareIds) {
+            $table = $provisioningService->getTableName($organizationId);
+
+            if (!Schema::hasTable($table)) {
+                continue;
+            }
+
+            DB::table($table)
+                ->whereIn('prescription_share_id', $shareIds)
+                ->get(['prescription_share_id', 'status', 'order_ref_id'])
+                ->each(function ($row) use (&$orderInfoByShareId) {
+                    $orderInfoByShareId[$row->prescription_share_id] = [
+                        'status' => $row->status,
+                        'order_ref_id' => $row->order_ref_id,
+                    ];
+                });
+        }
+
+        $submittedShareIds = collect($orderInfoByShareId)
+            ->filter(fn ($order) => $order['status'] === 'submitted')
+            ->keys();
+
+        $shares = PrescriptionShare::query()
+            ->where('doctor_id', $doctor->id)
+            ->when(
+                $request->query('organization_id'),
+                fn ($query, $organizationId) => $query->where('organization_id', $organizationId)
+            )
+            ->when(
+                $request->query('status'),
+                fn ($query, $status) => $query->where('status', $status)
+            )
+            ->whereNotIn('id', $submittedShareIds)
+            ->with('organization:id,organization_name')
+            ->latest('id')
+            ->paginate($request->integer('per_page', 20));
+
+        $shares->getCollection()->transform(function (PrescriptionShare $share) use ($orderInfoByShareId) {
+            $order = $orderInfoByShareId[$share->id] ?? null;
+
+            $share->setAttribute('order_status', $order['status'] ?? 'not_converted');
+            $share->setAttribute('order_ref_id', $order['order_ref_id'] ?? null);
+
+            return $share;
+        });
+
+        return ApiResponse::success(
+            message: 'Prescriptions pending order submission retrieved successfully.',
             data: [
                 'shares' => $shares,
             ]

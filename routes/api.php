@@ -245,6 +245,7 @@ Route::middleware([
     Route::post('prescriptions/{prescriptionId}/finalize', [PrescriptionController::class, 'finalize']);
     Route::get('prescriptions/{prescriptionId}/shares', [PrescriptionShareController::class, 'doctorIndex']);
     Route::get('shared-prescriptions', [PrescriptionShareController::class, 'doctorList']);
+    Route::get('shared-prescriptions/pending-orders', [PrescriptionShareController::class, 'doctorPendingOrders']); //Shares not yet submitted as an order
 
     Route::get('investigations/{investigationId}', [InvestigationController::class, 'show']);
     Route::patch('investigations/{investigationId}', [InvestigationController::class, 'update']);
