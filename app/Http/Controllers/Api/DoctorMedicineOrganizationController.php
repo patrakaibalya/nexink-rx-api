@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Doctor\MedicineOrganizationFavoriteRequest;
+use App\Http\Requests\Doctor\MedicineOrganizationIndexRequest;
 use App\Http\Requests\Doctor\MedicineOrganizationSubscriptionIndexRequest;
 use App\Http\Requests\Doctor\MedicineOrganizationSubscriptionRequest;
 use App\Models\DoctorMedicineSubscription;
@@ -184,19 +185,32 @@ class DoctorMedicineOrganizationController extends Controller
     }
 
     public function allOrganizations(
-        Request $request
+        MedicineOrganizationIndexRequest $request
     ): JsonResponse {
         $doctor = $request->user();
 
         $organizations = MedicineOrganization::query()
             ->where('is_active', true)
+            ->when(
+                $request->filled('search'),
+                function ($query) use ($request) {
+                    $search = $request->string('search')->toString();
+
+                    $query->where(function ($query) use ($search) {
+                        $query
+                            ->where('organization_name', 'like', "%{$search}%")
+                            ->orWhere('city', 'like', "%{$search}%")
+                            ->orWhere('state', 'like', "%{$search}%");
+                    });
+                }
+            )
             ->with([
                 'subscriptions' => function ($query) use ($doctor) {
                     $query->where('doctor_id', $doctor->id);
                 },
             ])
             ->latest('id')
-            ->paginate(20);
+            ->paginate($request->integer('per_page', 20));
 
         return ApiResponse::success(
             message: 'Medicine organizations retrieved successfully.',
