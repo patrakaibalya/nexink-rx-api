@@ -21,8 +21,10 @@ use Illuminate\Support\Facades\Schema;
 
 class PrescriptionShareController extends Controller
 {
-    public function doctorList(Request $request): JsonResponse
-    {
+    public function doctorList(
+        Request $request,
+        OrderDataProvisioningService $provisioningService
+    ): JsonResponse {
         $doctor = $request->user();
 
         $shares = PrescriptionShare::query()
@@ -38,6 +40,8 @@ class PrescriptionShareController extends Controller
             ->with('organization:id,organization_name')
             ->latest('id')
             ->paginate(20);
+
+        $this->attachOrderInfo($shares->getCollection(), $provisioningService);
 
         return ApiResponse::success(
             message: 'Shared prescriptions retrieved successfully.',
@@ -68,7 +72,48 @@ class PrescriptionShareController extends Controller
             )
             ->get(['id', 'organization_id']);
 
-        $shareIdsByOrganization = $doctorShares
+        $orderInfoByShareId = $this->buildOrderInfoMap($doctorShares, $provisioningService);
+
+        $submittedShareIds = collect($orderInfoByShareId)
+            ->filter(fn ($order) => $order['status'] === 'submitted')
+            ->keys();
+
+        $shares = PrescriptionShare::query()
+            ->where('doctor_id', $doctor->id)
+            ->when(
+                $request->query('organization_id'),
+                fn ($query, $organizationId) => $query->where('organization_id', $organizationId)
+            )
+            ->when(
+                $request->query('status'),
+                fn ($query, $status) => $query->where('status', $status)
+            )
+            ->whereNotIn('id', $submittedShareIds)
+            ->with('organization:id,organization_name')
+            ->latest('id')
+            ->paginate($request->integer('per_page', 20));
+
+        $this->applyOrderInfo($shares->getCollection(), $orderInfoByShareId);
+
+        return ApiResponse::success(
+            message: 'Prescriptions pending order submission retrieved successfully.',
+            data: [
+                'shares' => $shares,
+            ]
+        );
+    }
+
+    /**
+     * Group the given shares by organization and look up each
+     * organization's order table (order_data_{organizationId}) for a
+     * matching prescription_share_id. Returns [shareId => ['status' =>
+     * ..., 'order_ref_id' => ...]] for shares that have an order row.
+     */
+    private function buildOrderInfoMap(
+        \Illuminate\Support\Collection $shares,
+        OrderDataProvisioningService $provisioningService
+    ): array {
+        $shareIdsByOrganization = $shares
             ->groupBy('organization_id')
             ->map(fn ($group) => $group->pluck('id'));
 
@@ -92,40 +137,28 @@ class PrescriptionShareController extends Controller
                 });
         }
 
-        $submittedShareIds = collect($orderInfoByShareId)
-            ->filter(fn ($order) => $order['status'] === 'submitted')
-            ->keys();
+        return $orderInfoByShareId;
+    }
 
-        $shares = PrescriptionShare::query()
-            ->where('doctor_id', $doctor->id)
-            ->when(
-                $request->query('organization_id'),
-                fn ($query, $organizationId) => $query->where('organization_id', $organizationId)
-            )
-            ->when(
-                $request->query('status'),
-                fn ($query, $status) => $query->where('status', $status)
-            )
-            ->whereNotIn('id', $submittedShareIds)
-            ->with('organization:id,organization_name')
-            ->latest('id')
-            ->paginate($request->integer('per_page', 20));
+    private function attachOrderInfo(
+        \Illuminate\Support\Collection $shares,
+        OrderDataProvisioningService $provisioningService
+    ): void {
+        $orderInfoByShareId = $this->buildOrderInfoMap($shares, $provisioningService);
 
-        $shares->getCollection()->transform(function (PrescriptionShare $share) use ($orderInfoByShareId) {
+        $this->applyOrderInfo($shares, $orderInfoByShareId);
+    }
+
+    private function applyOrderInfo(
+        \Illuminate\Support\Collection $shares,
+        array $orderInfoByShareId
+    ): void {
+        $shares->each(function (PrescriptionShare $share) use ($orderInfoByShareId) {
             $order = $orderInfoByShareId[$share->id] ?? null;
 
             $share->setAttribute('order_status', $order['status'] ?? 'not_converted');
             $share->setAttribute('order_ref_id', $order['order_ref_id'] ?? null);
-
-            return $share;
         });
-
-        return ApiResponse::success(
-            message: 'Prescriptions pending order submission retrieved successfully.',
-            data: [
-                'shares' => $shares,
-            ]
-        );
     }
 
     public function doctorIndex(
