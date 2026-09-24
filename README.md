@@ -51,6 +51,25 @@ cd /var/www/nexink-rx-api
     php artisan route:list
     php artisan queue:restart
     php artisan serve
+
+
+## TRUNCATE COMMAND MYSQL DB
+
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE doctor_db_1.appointments;
+TRUNCATE TABLE doctor_db_1.clinical_extractions;
+TRUNCATE TABLE doctor_db_1.doctor_handwriting_samples;
+TRUNCATE TABLE doctor_db_1.investigations;
+TRUNCATE TABLE doctor_db_1.investigation_items;
+TRUNCATE TABLE doctor_db_1.prescriptions;
+TRUNCATE TABLE doctor_db_1.prescription_items;
+TRUNCATE TABLE doctor_db_1.procedures;
+TRUNCATE TABLE doctor_db_1.procedure_items;
+TRUNCATE TABLE doctor_db_1.queues;
+TRUNCATE TABLE doctor_db_1.visits;
+TRUNCATE TABLE nexink_master.prescription_shares;
+TRUNCATE TABLE nexink_master.order_data_1;
+SET FOREIGN_KEY_CHECKS = 1;
     
 
 

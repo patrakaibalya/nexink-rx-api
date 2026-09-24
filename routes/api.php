@@ -170,6 +170,7 @@ Route::middleware([
 
 
     Route::post('handwriting/correct', [DoctorHandwritingCorrectionController::class, 'correct']);
+    Route::get('handwriting-corrections', [DoctorHandwritingCorrectionController::class, 'list']);
 
     Route::get('patients', [PatientController::class, 'index']);
     Route::post('patients', [PatientController::class, 'store']);
