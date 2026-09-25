@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\DoctorAuthController;
 use App\Http\Controllers\Api\Auth\MasterAuthController;
 use App\Http\Controllers\Api\Auth\MedicineOrganizationAuthController;
 use App\Http\Controllers\Api\ClinicalExtractionController;
+use App\Http\Controllers\Api\ClinicCatalogSearchController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\ClinicPrescriptionTemplateController;
 use App\Http\Controllers\Api\DoctorDashboardController;
@@ -219,6 +220,10 @@ Route::middleware([
     Route::post('clinics/{clinicId}/prescription-template', [ClinicPrescriptionTemplateController::class, 'store']);
     Route::get('clinics/{clinicId}/prescription-template/header-image', [ClinicPrescriptionTemplateController::class, 'headerImage']);
     Route::get('clinics/{clinicId}/prescription-template/footer-image', [ClinicPrescriptionTemplateController::class, 'footerImage']);
+
+    Route::get('clinics/{clinicId}/medicines/search', [ClinicCatalogSearchController::class, 'medicines']);
+    Route::get('clinics/{clinicId}/investigations/search', [ClinicCatalogSearchController::class, 'investigations']);
+    Route::get('clinics/{clinicId}/procedures/search', [ClinicCatalogSearchController::class, 'procedures']);
 
     Route::get('dashboard/summary', [DoctorDashboardController::class, 'summary']);
 
