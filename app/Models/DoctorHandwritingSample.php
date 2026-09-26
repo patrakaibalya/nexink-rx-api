@@ -17,6 +17,7 @@ class DoctorHandwritingSample extends Model
         'doctor_id',
         'sample_type',
         'prescription_id',
+        'page_number',
         'tool_data',
         'raw_recognized_text',
         'final_corrected_text',

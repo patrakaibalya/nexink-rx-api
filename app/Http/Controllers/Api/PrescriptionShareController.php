@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MedicineOrganization\PrescriptionShareStatusRequest;
 use App\Models\ClinicalExtraction;
-use App\Models\DoctorHandwritingSample;
 use App\Models\DoctorMedicineSubscription;
 use App\Models\Prescription;
 use App\Models\PrescriptionShare;
 use App\Services\Clinic\ClinicPrescriptionTemplateService;
+use App\Services\Doctor\DoctorHandwritingSampleService;
 use App\Services\Doctor\DoctorHandwritingStrokeService;
 use App\Services\Order\OrderDataProvisioningService;
 use App\Support\ApiResponse;
@@ -300,6 +300,7 @@ class PrescriptionShareController extends Controller
 
     public function handwritingStrokes(
         Request $request,
+        DoctorHandwritingSampleService $sampleService,
         DoctorHandwritingStrokeService $strokeService,
         int $shareId
     ): JsonResponse {
@@ -329,19 +330,22 @@ class PrescriptionShareController extends Controller
             );
         }
 
-        $sample = DoctorHandwritingSample::query()
-            ->where('sample_type', 'prescription')
-            ->where('prescription_id', $share->prescription_id)
-            ->first();
+        $samples = $sampleService->pages(
+            doctorId: $share->doctor_id,
+            prescriptionId: $share->prescription_id
+        )->filter(fn ($sample) => (bool) $sample->ink_file_path);
 
-        if (!$sample || !$sample->ink_file_path) {
+        if ($samples->isEmpty()) {
             return ApiResponse::notFound(
                 'No handwriting sample available for this prescription.'
             );
         }
 
         try {
-            $strokes = $strokeService->decode($sample);
+            $pages = $samples->map(fn ($sample) => [
+                'page_number' => $sample->page_number,
+                'strokes' => $strokeService->decode($sample)['strokes'],
+            ])->values()->all();
         } catch (\RuntimeException $e) {
             return ApiResponse::error(
                 message: $e->getMessage(),
@@ -352,7 +356,11 @@ class PrescriptionShareController extends Controller
 
         return ApiResponse::success(
             message: 'Original handwritten prescription retrieved successfully.',
-            data: $strokes
+            data: [
+                'sample_type' => 'prescription',
+                'prescription_id' => $share->prescription_id,
+                'pages' => $pages,
+            ]
         );
     }
 

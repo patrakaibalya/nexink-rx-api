@@ -4,6 +4,7 @@ namespace App\Services\Doctor;
 
 use App\Models\DoctorHandwritingSample;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
@@ -14,7 +15,8 @@ class DoctorHandwritingSampleService
     public function index(
         int $doctorId,
         string $sampleType,
-        ?int $prescriptionId = null
+        ?int $prescriptionId = null,
+        ?int $pageNumber = null
     ): ?DoctorHandwritingSample {
         $query = DoctorHandwritingSample::query()
             ->where('doctor_id', $doctorId)
@@ -33,7 +35,28 @@ class DoctorHandwritingSampleService
             );
         }
 
+        $query->where(
+            'page_number',
+            $this->normalizePageNumber($sampleType, $pageNumber)
+        );
+
         return $query->first();
+    }
+
+    /**
+     * All prescription pages for a doctor's prescription, ordered by
+     * page_number, oldest page first.
+     */
+    public function pages(
+        int $doctorId,
+        int $prescriptionId
+    ): Collection {
+        return DoctorHandwritingSample::query()
+            ->where('doctor_id', $doctorId)
+            ->where('sample_type', 'prescription')
+            ->where('prescription_id', $prescriptionId)
+            ->orderBy('page_number')
+            ->get();
     }
 
     public function store(
@@ -41,18 +64,21 @@ class DoctorHandwritingSampleService
         string $sampleType,
         ?int $prescriptionId,
         array $data,
-        ?UploadedFile $inkFile
+        ?UploadedFile $inkFile,
+        ?int $pageNumber = null
     ): DoctorHandwritingSample {
         $this->validateSampleType(
             sampleType: $sampleType,
             prescriptionId: $prescriptionId
         );
 
+        $pageNumber = $this->normalizePageNumber($sampleType, $pageNumber);
+
         /*
         |--------------------------------------------------------------------------
-        | Upsert: a sample for this doctor/type/prescription may already exist
-        | (e.g. saved once during an emergency finish, then saved again after
-        | the prescription is reopened for review) — update it in place
+        | Upsert: a sample for this doctor/type/prescription/page may already
+        | exist (e.g. saved once during an emergency finish, then saved again
+        | after the prescription is reopened for review) — update it in place
         | instead of creating a duplicate row with a stale ink_file_path.
         |--------------------------------------------------------------------------
         */
@@ -60,7 +86,8 @@ class DoctorHandwritingSampleService
         $existing = $this->index(
             doctorId: $doctorId,
             sampleType: $sampleType,
-            prescriptionId: $prescriptionId
+            prescriptionId: $prescriptionId,
+            pageNumber: $pageNumber
         );
 
         if ($existing) {
@@ -69,7 +96,8 @@ class DoctorHandwritingSampleService
                 sampleType: $sampleType,
                 prescriptionId: $prescriptionId,
                 data: $data,
-                inkFile: $inkFile
+                inkFile: $inkFile,
+                pageNumber: $pageNumber
             );
 
             // $existing was just found by the same lookup update() uses
@@ -83,7 +111,8 @@ class DoctorHandwritingSampleService
                 $sampleType,
                 $prescriptionId,
                 $data,
-                $inkFile
+                $inkFile,
+                $pageNumber
             ) {
                 $inkFilePath = null;
 
@@ -92,7 +121,8 @@ class DoctorHandwritingSampleService
                         doctorId: $doctorId,
                         sampleType: $sampleType,
                         prescriptionId: $prescriptionId,
-                        inkFile: $inkFile
+                        inkFile: $inkFile,
+                        pageNumber: $pageNumber
                     );
                 }
 
@@ -104,6 +134,8 @@ class DoctorHandwritingSampleService
                     'prescription_id' => $sampleType === 'prescription'
                         ? $prescriptionId
                         : null,
+
+                    'page_number' => $pageNumber,
 
                     'tool_data' =>
                     $data['tool_data'] ?? null,
@@ -127,17 +159,21 @@ class DoctorHandwritingSampleService
         string $sampleType,
         ?int $prescriptionId,
         array $data,
-        ?UploadedFile $inkFile
+        ?UploadedFile $inkFile,
+        ?int $pageNumber = null
     ): ?DoctorHandwritingSample {
         $this->validateSampleType(
             sampleType: $sampleType,
             prescriptionId: $prescriptionId
         );
 
+        $pageNumber = $this->normalizePageNumber($sampleType, $pageNumber);
+
         $sample = $this->index(
             doctorId: $doctorId,
             sampleType: $sampleType,
-            prescriptionId: $prescriptionId
+            prescriptionId: $prescriptionId,
+            pageNumber: $pageNumber
         );
 
         if (!$sample) {
@@ -151,6 +187,7 @@ class DoctorHandwritingSampleService
                 $prescriptionId,
                 $data,
                 $inkFile,
+                $pageNumber,
                 $sample
             ) {
                 $inkFilePath = $sample->ink_file_path;
@@ -171,7 +208,8 @@ class DoctorHandwritingSampleService
                         doctorId: $doctorId,
                         sampleType: $sampleType,
                         prescriptionId: $prescriptionId,
-                        inkFile: $inkFile
+                        inkFile: $inkFile,
+                        pageNumber: $pageNumber
                     );
                 }
 
@@ -199,12 +237,14 @@ class DoctorHandwritingSampleService
         int $doctorId,
         string $sampleType,
         ?int $prescriptionId,
-        UploadedFile $inkFile
+        UploadedFile $inkFile,
+        int $pageNumber
     ): string {
         $inkFilePath = $this->getInkFilePath(
             doctorId: $doctorId,
             sampleType: $sampleType,
-            prescriptionId: $prescriptionId
+            prescriptionId: $prescriptionId,
+            pageNumber: $pageNumber
         );
 
         $inkFile->storeAs(
@@ -219,14 +259,14 @@ class DoctorHandwritingSampleService
     private function getInkFilePath(
         int $doctorId,
         string $sampleType,
-        ?int $prescriptionId = null
+        ?int $prescriptionId = null,
+        int $pageNumber = 1
     ): string {
         return match ($sampleType) {
-            'about_me' =>
-            "doctor-{$doctorId}/about_me.ink.pb",
-
             'prescription' =>
-            "doctor-{$doctorId}/prescription_{$prescriptionId}.ink.pb",
+            $pageNumber > 1
+                ? "doctor-{$doctorId}/prescription_{$prescriptionId}_page_{$pageNumber}.ink.pb"
+                : "doctor-{$doctorId}/prescription_{$prescriptionId}.ink.pb",
 
             default => throw new InvalidArgumentException(
                 "Unsupported sample type: {$sampleType}"
@@ -234,29 +274,24 @@ class DoctorHandwritingSampleService
         };
     }
 
+    private function normalizePageNumber(
+        string $sampleType,
+        ?int $pageNumber
+    ): int {
+        return $pageNumber ?? 1;
+    }
+
     private function validateSampleType(
         string $sampleType,
         ?int $prescriptionId
     ): void {
-        if (
-            !in_array(
-                $sampleType,
-                [
-                    'about_me',
-                    'prescription',
-                ],
-                true
-            )
-        ) {
+        if ($sampleType !== 'prescription') {
             throw new InvalidArgumentException(
                 "Unsupported sample type: {$sampleType}"
             );
         }
 
-        if (
-            $sampleType === 'prescription'
-            && (!$prescriptionId || $prescriptionId <= 0)
-        ) {
+        if (!$prescriptionId || $prescriptionId <= 0) {
             throw new InvalidArgumentException(
                 'Prescription ID is required for prescription samples.'
             );

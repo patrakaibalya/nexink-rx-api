@@ -26,15 +26,19 @@ class DoctorHandwritingSampleController extends Controller
                 'sample_type' => [
                     'required',
                     'string',
-                    'in:about_me,prescription',
+                    'in:prescription',
                 ],
 
                 'prescription_id' => [
+                    'required',
+                    'integer',
+                    'min:1',
+                ],
+
+                'page_number' => [
                     'nullable',
                     'integer',
                     'min:1',
-                    'required_if:sample_type,prescription',
-                    'prohibited_if:sample_type,about_me',
                 ],
             ]
         )->validate();
@@ -44,6 +48,9 @@ class DoctorHandwritingSampleController extends Controller
             sampleType: $data['sample_type'],
             prescriptionId: isset($data['prescription_id'])
                 ? (int) $data['prescription_id']
+                : null,
+            pageNumber: isset($data['page_number'])
+                ? (int) $data['page_number']
                 : null
         );
 
@@ -51,6 +58,36 @@ class DoctorHandwritingSampleController extends Controller
             message: 'Doctor handwriting sample retrieved successfully.',
             data: [
                 'handwriting_sample' => $sample,
+            ]
+        );
+    }
+
+    public function pages(
+        Request $request,
+        DoctorHandwritingSampleService $doctorHandwritingSampleService
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $data = Validator::make(
+            $request->query(),
+            [
+                'prescription_id' => [
+                    'required',
+                    'integer',
+                    'min:1',
+                ],
+            ]
+        )->validate();
+
+        $pages = $doctorHandwritingSampleService->pages(
+            doctorId: $doctor->id,
+            prescriptionId: (int) $data['prescription_id']
+        );
+
+        return ApiResponse::success(
+            message: 'Doctor handwriting sample pages retrieved successfully.',
+            data: [
+                'pages' => $pages,
             ]
         );
     }
@@ -77,7 +114,10 @@ class DoctorHandwritingSampleController extends Controller
                 ? (int) $data['prescription_id']
                 : null,
             data: $data,
-            inkFile: $request->file('ink_file')
+            inkFile: $request->file('ink_file'),
+            pageNumber: isset($data['page_number'])
+                ? (int) $data['page_number']
+                : null
         );
 
         ProcessDoctorHandwritingMemory::dispatch(
@@ -115,7 +155,10 @@ class DoctorHandwritingSampleController extends Controller
                 ? (int) $data['prescription_id']
                 : null,
             data: $data,
-            inkFile: $request->file('ink_file')
+            inkFile: $request->file('ink_file'),
+            pageNumber: isset($data['page_number'])
+                ? (int) $data['page_number']
+                : null
         );
 
         if (!$sample) {
@@ -149,14 +192,19 @@ class DoctorHandwritingSampleController extends Controller
                 'sample_type' => [
                     'required',
                     'string',
-                    'in:about_me,prescription',
+                    'in:prescription',
                 ],
 
                 'prescription_id' => [
+                    'required',
+                    'integer',
+                    'min:1',
+                ],
+
+                'page_number' => [
                     'nullable',
                     'integer',
                     'min:1',
-                    'required_if:sample_type,prescription',
                 ],
             ]
         )->validate();
@@ -166,6 +214,9 @@ class DoctorHandwritingSampleController extends Controller
             sampleType: $data['sample_type'],
             prescriptionId: isset($data['prescription_id'])
                 ? (int) $data['prescription_id']
+                : null,
+            pageNumber: isset($data['page_number'])
+                ? (int) $data['page_number']
                 : null
         );
 
@@ -192,14 +243,17 @@ class DoctorHandwritingSampleController extends Controller
             'sample_type' => [
                 'required',
                 'string',
-                'in:about_me,prescription',
+                'in:prescription',
             ],
             'prescription_id' => [
+                'required',
+                'integer',
+                'min:1',
+            ],
+            'page_number' => [
                 'nullable',
                 'integer',
                 'min:1',
-                'required_if:sample_type,prescription',
-                'prohibited_if:sample_type,about_me',
             ],
         ])->validate();
 
@@ -208,6 +262,9 @@ class DoctorHandwritingSampleController extends Controller
             sampleType: $data['sample_type'],
             prescriptionId: isset($data['prescription_id'])
                 ? (int) $data['prescription_id']
+                : null,
+            pageNumber: isset($data['page_number'])
+                ? (int) $data['page_number']
                 : null
         );
 

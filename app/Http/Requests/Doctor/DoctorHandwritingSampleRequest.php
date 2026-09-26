@@ -32,15 +32,19 @@ class DoctorHandwritingSampleRequest extends FormRequest
             'sample_type' => [
                 'required',
                 'string',
-                'in:about_me,prescription',
+                'in:prescription',
             ],
 
             'prescription_id' => [
+                'required',
+                'integer',
+                'min:1',
+            ],
+
+            'page_number' => [
                 'nullable',
                 'integer',
                 'min:1',
-                'required_if:sample_type,prescription',
-                'prohibited_if:sample_type,about_me',
             ],
 
             'ink_file' => [
