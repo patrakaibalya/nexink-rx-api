@@ -98,6 +98,39 @@ class DoctorHandwritingSampleController extends Controller
     ): JsonResponse {
         $doctor = $request->user();
 
+        if ($request->isBulk()) {
+            $prescriptionId = (int) $request->input('prescription_id');
+            $files = $request->file('ink_file');
+            $pageNumbers = $request->input('page_number');
+
+            $samples = [];
+
+            foreach ($files as $index => $file) {
+                $sample = $doctorHandwritingSampleService->store(
+                    doctorId: $doctor->id,
+                    sampleType: 'prescription',
+                    prescriptionId: $prescriptionId,
+                    data: [],
+                    inkFile: $file,
+                    pageNumber: (int) $pageNumbers[$index]
+                );
+
+                ProcessDoctorHandwritingMemory::dispatch(
+                    $doctor->id,
+                    $sample->id
+                )->afterCommit();
+
+                $samples[] = $sample;
+            }
+
+            return ApiResponse::created(
+                message: 'Doctor handwriting sample pages created successfully.',
+                data: [
+                    'handwriting_samples' => $samples,
+                ]
+            );
+        }
+
         $data = $request->validated();
 
         if (isset($data['tool_data'])) {
@@ -138,6 +171,64 @@ class DoctorHandwritingSampleController extends Controller
         DoctorHandwritingSampleService $doctorHandwritingSampleService
     ): JsonResponse {
         $doctor = $request->user();
+
+        if ($request->isBulk()) {
+            $prescriptionId = (int) $request->input('prescription_id');
+            $files = $request->file('ink_file');
+            $pageNumbers = array_map(
+                'intval',
+                $request->input('page_number')
+            );
+
+            $missing = [];
+
+            foreach ($pageNumbers as $pageNumber) {
+                $existing = $doctorHandwritingSampleService->index(
+                    doctorId: $doctor->id,
+                    sampleType: 'prescription',
+                    prescriptionId: $prescriptionId,
+                    pageNumber: $pageNumber
+                );
+
+                if (!$existing) {
+                    $missing[] = $pageNumber;
+                }
+            }
+
+            if (!empty($missing)) {
+                return ApiResponse::notFound(
+                    'Doctor handwriting sample not found for page(s): '
+                        . implode(', ', $missing) . '.'
+                );
+            }
+
+            $samples = [];
+
+            foreach ($files as $index => $file) {
+                $sample = $doctorHandwritingSampleService->update(
+                    doctorId: $doctor->id,
+                    sampleType: 'prescription',
+                    prescriptionId: $prescriptionId,
+                    data: [],
+                    inkFile: $file,
+                    pageNumber: $pageNumbers[$index]
+                );
+
+                ProcessDoctorHandwritingMemory::dispatch(
+                    $doctor->id,
+                    $sample->id
+                )->afterCommit();
+
+                $samples[] = $sample;
+            }
+
+            return ApiResponse::success(
+                message: 'Doctor handwriting sample pages updated successfully.',
+                data: [
+                    'handwriting_samples' => $samples,
+                ]
+            );
+        }
 
         $data = $request->validated();
 
