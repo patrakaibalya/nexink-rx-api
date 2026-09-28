@@ -30,8 +30,10 @@ class ClinicController extends Controller
         );
     }
 
-    public function store(ClinicStoreRequest $request): JsonResponse
-    {
+    public function store(
+        ClinicStoreRequest $request,
+        ClinicService $clinicService
+    ): JsonResponse {
         $data = $request->validated();
 
         $this->assertActivePricingOrganizationIsSubscribed(
@@ -39,7 +41,7 @@ class ClinicController extends Controller
             $data['active_pricing_organization_id'] ?? null
         );
 
-        $clinic = Clinic::create($data);
+        $clinic = $clinicService->createClinic($data);
 
         return ApiResponse::created(
             message: 'Clinic created successfully.',
