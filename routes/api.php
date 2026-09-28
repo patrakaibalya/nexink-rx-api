@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\DoctorHandwritingSampleController;
 use App\Http\Controllers\Api\DoctorMedicineLibraryController;
 use App\Http\Controllers\Api\DoctorMedicineOrganizationController;
 use App\Http\Controllers\Api\DevN8nDemoController;
+use App\Http\Controllers\Api\ErrorLogController;
 use App\Http\Controllers\Api\GlobalInvestigationLibraryController;
 use App\Http\Controllers\Api\GlobalMedicineLibraryController;
 use App\Http\Controllers\Api\GlobalProcedureLibraryController;
@@ -77,6 +78,8 @@ Route::middleware([
     Route::post('logout', [MedicineOrganizationAuthController::class, 'logout']);
 
     Route::get('dashboard/summary', [OrganizationDashboardController::class, 'summary']);
+
+    Route::post('error-logs', [ErrorLogController::class, 'store']);
 
     Route::get('reports/doctors', [OrganizationReportController::class, 'doctors']);
     Route::get('reports/unrecognised-medicines', [OrganizationReportController::class, 'unrecognisedMedicines']);
@@ -147,9 +150,20 @@ Route::middleware([
     Route::get('global-procedures/{procedureId}', [GlobalProcedureLibraryController::class, 'show']);
     Route::patch('global-procedures/{procedureId}', [GlobalProcedureLibraryController::class, 'update']);
     Route::delete('global-procedures/{procedureId}', [GlobalProcedureLibraryController::class, 'destroy']);
+
+    Route::get('error-logs', [ErrorLogController::class, 'index']);
+    Route::get('error-logs/summary', [ErrorLogController::class, 'summary']);
+    Route::get('error-logs/{errorLogId}', [ErrorLogController::class, 'show']);
+    Route::patch('error-logs/{errorLogId}/status', [ErrorLogController::class, 'updateStatus']);
+    Route::delete('error-logs/{errorLogId}', [ErrorLogController::class, 'destroy']);
 });
 
 
+
+// Doctor error reporting (Android / iOS / Web). Kept outside doctor.tenant
+// so errors can still be reported when the tenant database is unavailable.
+Route::post('doctor/error-logs', [ErrorLogController::class, 'store'])
+    ->middleware('doctor.auth');
 
 //// Doctor-tenant APIs
 Route::middleware([

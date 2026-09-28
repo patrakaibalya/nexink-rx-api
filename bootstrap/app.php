@@ -5,6 +5,7 @@ use App\Http\Middleware\DoctorWebOrSanctumMiddleware;
 use App\Http\Middleware\MasterAdminMiddleware;
 use App\Http\Middleware\MedicineOrganizationMiddleware;
 use App\Support\ApiResponse;
+use App\Support\ErrorLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Http\Request;
@@ -27,7 +28,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Store unhandled server errors from the doctor and medicine
+        // organization APIs so master admins can review them. Validation,
+        // auth and HTTP (404/403...) exceptions are not reported by Laravel,
+        // so they never reach this callback.
+        $exceptions->report(function (Throwable $exception) {
+            $request = request();
+
+            if ($request->is('api/doctor/*', 'api/med/*')) {
+                ErrorLogger::fromException($exception, $request);
+            }
+        });
+
         $exceptions->render(
             function (
                 ValidationException $exception,
