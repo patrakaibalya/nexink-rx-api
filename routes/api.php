@@ -229,6 +229,7 @@ Route::middleware([
     Route::get('dashboard/summary', [DoctorDashboardController::class, 'summary']);
 
     Route::get('visits', [VisitController::class, 'index']); //Date-wise consultation list
+    Route::get('visits/resume-pending', [VisitController::class, 'resumePending']); //App relaunch: find a leftover visit/prescription to jump back into
     Route::post('visits/start', [VisitController::class, 'start']);
     Route::post('visits/direct', [VisitController::class, 'direct']); //Emergency
     Route::delete('visits/{visitId}/reset-direct', [VisitController::class, 'resetDirect']); //Undo accidental Emergency click

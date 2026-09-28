@@ -580,6 +580,91 @@ class VisitService
         );
     }
 
+    /**
+     * Called when the app (re)launches to find a visit/prescription the
+     * doctor was left in the middle of — e.g. the app was killed while
+     * on the prescription-writing screen before Finish/Skip was tapped.
+     *
+     * - An in-progress visit with a draft prescription is auto-finished
+     *   the same way the "Skip" button (emergencyComplete) does, and
+     *   handed back for the Review stage.
+     * - An in-progress visit with no prescription yet is left alone and
+     *   handed back for the writing stage.
+     * - Otherwise, the most recent already-unverified prescription (e.g.
+     *   from an earlier Skip that was never reviewed) is handed back
+     *   for the Review stage.
+     */
+    public function resumePending(): array
+    {
+        $inProgressVisit = Visit::query()
+            ->where('status', 'in_progress')
+            ->latest('started_at')
+            ->first();
+
+        if ($inProgressVisit) {
+            $draftPrescription = Prescription::query()
+                ->where('visit_id', $inProgressVisit->id)
+                ->where('status', 'draft')
+                ->latest('id')
+                ->first();
+
+            if (!$draftPrescription) {
+                return [
+                    'resume_available' => true,
+                    'stage' => 'writing',
+                    'visit' => $inProgressVisit->load([
+                        'clinic',
+                        'patient',
+                        'appointment',
+                        'queue',
+                    ]),
+                    'prescription' => null,
+                ];
+            }
+
+            $visit = $this->emergencyComplete($inProgressVisit->id, []);
+            $visit->load(['clinic', 'patient', 'appointment', 'queue']);
+
+            return [
+                'resume_available' => true,
+                'stage' => 'review',
+                'visit' => $visit,
+                'prescription' => $visit->prescription()
+                    ->with('items')
+                    ->first(),
+            ];
+        }
+
+        $unverifiedPrescription = Prescription::query()
+            ->with('items')
+            ->where('status', 'unverified')
+            ->latest('id')
+            ->first();
+
+        if ($unverifiedPrescription) {
+            return [
+                'resume_available' => true,
+                'stage' => 'review',
+                'visit' => Visit::query()
+                    ->with([
+                        'clinic',
+                        'patient',
+                        'appointment',
+                        'queue',
+                    ])
+                    ->find($unverifiedPrescription->visit_id),
+                'prescription' => $unverifiedPrescription,
+            ];
+        }
+
+        return [
+            'resume_available' => false,
+            'stage' => null,
+            'visit' => null,
+            'prescription' => null,
+        ];
+    }
+
     public function direct(array $data): Visit
     {
         return DB::connection('doctor')->transaction(

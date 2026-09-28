@@ -115,6 +115,19 @@ class VisitController extends Controller
         );
     }
 
+    public function resumePending(
+        VisitService $visitService
+    ): JsonResponse {
+        $result = $visitService->resumePending();
+
+        return ApiResponse::success(
+            message: $result['resume_available']
+                ? 'Pending consultation found.'
+                : 'No pending consultation to resume.',
+            data: $result
+        );
+    }
+
     public function reopen(
         VisitService $visitService,
         int $visitId
