@@ -92,6 +92,65 @@ class DoctorHandwritingSampleController extends Controller
         );
     }
 
+    /**
+     * Decoded strokes for every page of a doctor's own multi-page
+     * handwritten prescription, ordered by page_number — the doctor-side
+     * counterpart of PrescriptionShareController::handwritingStrokes.
+     */
+    public function pagesStrokes(
+        Request $request,
+        DoctorHandwritingSampleService $doctorHandwritingSampleService,
+        DoctorHandwritingStrokeService $strokeService
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $data = Validator::make(
+            $request->query(),
+            [
+                'prescription_id' => [
+                    'required',
+                    'integer',
+                    'min:1',
+                ],
+            ]
+        )->validate();
+
+        $prescriptionId = (int) $data['prescription_id'];
+
+        $samples = $doctorHandwritingSampleService->pages(
+            doctorId: $doctor->id,
+            prescriptionId: $prescriptionId
+        )->filter(fn ($sample) => (bool) $sample->ink_file_path);
+
+        if ($samples->isEmpty()) {
+            return ApiResponse::notFound(
+                'No handwriting sample available for this prescription.'
+            );
+        }
+
+        try {
+            $pages = $samples->map(fn ($sample) => [
+                'page_number' => $sample->page_number,
+                'strokes' => $strokeService->decode($sample)['strokes'],
+            ])->values()->all();
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error(
+                message: $e->getMessage(),
+                data: null,
+                status: 500
+            );
+        }
+
+        return ApiResponse::success(
+            message: 'Doctor handwriting strokes retrieved successfully.',
+            data: [
+                'sample_type' => 'prescription',
+                'prescription_id' => $prescriptionId,
+                'pages' => $pages,
+            ]
+        );
+    }
+
     public function store(
         DoctorHandwritingSampleRequest $request,
         DoctorHandwritingSampleService $doctorHandwritingSampleService
