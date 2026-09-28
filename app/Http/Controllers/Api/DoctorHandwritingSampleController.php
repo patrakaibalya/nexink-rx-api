@@ -162,6 +162,13 @@ class DoctorHandwritingSampleController extends Controller
             $files = $request->file('ink_file');
             $pageNumbers = $request->input('page_number');
 
+            // Shared across every page in this batch - there's no per-page tool state to
+            // carry for pages other than the current one (that page's real tool_data comes
+            // through the separate non-bulk call).
+            $toolData = $request->filled('tool_data')
+                ? json_decode($request->input('tool_data'), true)
+                : null;
+
             $samples = [];
 
             foreach ($files as $index => $file) {
@@ -169,7 +176,7 @@ class DoctorHandwritingSampleController extends Controller
                     doctorId: $doctor->id,
                     sampleType: 'prescription',
                     prescriptionId: $prescriptionId,
-                    data: [],
+                    data: ['tool_data' => $toolData],
                     inkFile: $file,
                     pageNumber: (int) $pageNumbers[$index]
                 );

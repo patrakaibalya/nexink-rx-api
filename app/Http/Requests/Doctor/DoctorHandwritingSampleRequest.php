@@ -26,6 +26,11 @@ class DoctorHandwritingSampleRequest extends FormRequest
     {
         if ($this->isBulk()) {
             return [
+                'tool_data' => [
+                    'nullable',
+                    'json',
+                ],
+
                 'sample_type' => [
                     'required',
                     'string',
