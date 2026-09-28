@@ -84,6 +84,10 @@ class SharePrescriptionWithOrganizationsJob implements ShouldQueue
             'gender' => $patient->gender,
             'date_of_birth' => $patient->date_of_birth?->toDateString(),
             'blood_group' => $patient->blood_group,
+            'weight' => $patient->weight,
+            'diabetic_result' => $patient->diabetic_result,
+            'blood_pressure_result' => $patient->blood_pressure_result,
+            'thyroid_result' => $patient->thyroid_result,
         ];
 
         $clinicSnapshot = $clinic ? [
