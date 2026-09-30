@@ -12,42 +12,61 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProcedureDocumentService
 {
-    public function store(int $procedureId, UploadedFile $document): Procedure
+    /**
+     * Store every uploaded file for one procedure. The rows are written
+     * in one transaction; if anything fails, files already written to disk
+     * for this batch are removed so no orphans are left behind.
+     *
+     * @param UploadedFile[] $files
+     */
+    public function store(int $procedureId, array $files): Procedure
     {
-        return DB::connection('doctor')->transaction(
-            function () use ($procedureId, $document) {
-                $procedure = Procedure::find($procedureId);
+        $storedPaths = [];
 
-                if (!$procedure) {
-                    throw ValidationException::withMessages([
-                        'procedure_id' => [
-                            'Procedure not found.',
-                        ],
+        try {
+            return DB::connection('doctor')->transaction(
+                function () use ($procedureId, $files, &$storedPaths) {
+                    $procedure = Procedure::find($procedureId);
+
+                    if (!$procedure) {
+                        throw ValidationException::withMessages([
+                            'procedure_id' => [
+                                'Procedure not found.',
+                            ],
+                        ]);
+                    }
+
+                    $directory = "procedure-{$procedureId}/documents";
+
+                    foreach ($files as $file) {
+                        $filename = uniqid('doc_', true) . '.' . $file->getClientOriginalExtension();
+
+                        $file->storeAs($directory, $filename, 'local');
+                        $storedPaths[] = "{$directory}/{$filename}";
+
+                        ProcedureDocument::create([
+                            'procedure_id' => $procedureId,
+                            'file_path' => "{$directory}/{$filename}",
+                            'original_name' => $file->getClientOriginalName(),
+                            'mime_type' => $file->getClientMimeType(),
+                            'size' => $file->getSize(),
+                        ]);
+                    }
+
+                    return $procedure->fresh([
+                        'clinic',
+                        'patient',
+                        'visit',
+                        'items',
+                        'documents',
                     ]);
                 }
+            );
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($storedPaths);
 
-                $directory = "procedure-{$procedureId}/documents";
-                $filename = uniqid('doc_', true) . '.' . $document->getClientOriginalExtension();
-
-                $document->storeAs($directory, $filename, 'local');
-
-                ProcedureDocument::create([
-                    'procedure_id' => $procedureId,
-                    'file_path' => "{$directory}/{$filename}",
-                    'original_name' => $document->getClientOriginalName(),
-                    'mime_type' => $document->getClientMimeType(),
-                    'size' => $document->getSize(),
-                ]);
-
-                return $procedure->fresh([
-                    'clinic',
-                    'patient',
-                    'visit',
-                    'items',
-                    'documents',
-                ]);
-            }
-        );
+            throw $exception;
+        }
     }
 
     public function destroy(int $procedureId, int $documentId): Procedure

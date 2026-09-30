@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Procedure\ProcedureDocumentRequest;
+use App\Http\Requests\Procedure\ProcedureDocumentUploadRequest;
 use App\Services\Procedure\ProcedureDocumentService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -11,17 +12,17 @@ use Illuminate\Http\JsonResponse;
 class ProcedureDocumentController extends Controller
 {
     public function store(
-        ProcedureDocumentRequest $request,
+        ProcedureDocumentUploadRequest $request,
         ProcedureDocumentService $service,
         int $procedureId
     ): JsonResponse {
         $procedure = $service->store(
             $procedureId,
-            $request->file('document')
+            $request->uploadedFiles()
         );
 
         return ApiResponse::created(
-            message: 'Procedure document uploaded successfully.',
+            message: 'Procedure documents uploaded successfully.',
             data: [
                 'procedure' => $procedure,
             ]

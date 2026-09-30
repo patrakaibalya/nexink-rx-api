@@ -12,42 +12,61 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class InvestigationDocumentService
 {
-    public function store(int $investigationId, UploadedFile $document): Investigation
+    /**
+     * Store every uploaded file for one investigation. The rows are written
+     * in one transaction; if anything fails, files already written to disk
+     * for this batch are removed so no orphans are left behind.
+     *
+     * @param UploadedFile[] $files
+     */
+    public function store(int $investigationId, array $files): Investigation
     {
-        return DB::connection('doctor')->transaction(
-            function () use ($investigationId, $document) {
-                $investigation = Investigation::find($investigationId);
+        $storedPaths = [];
 
-                if (!$investigation) {
-                    throw ValidationException::withMessages([
-                        'investigation_id' => [
-                            'Investigation not found.',
-                        ],
+        try {
+            return DB::connection('doctor')->transaction(
+                function () use ($investigationId, $files, &$storedPaths) {
+                    $investigation = Investigation::find($investigationId);
+
+                    if (!$investigation) {
+                        throw ValidationException::withMessages([
+                            'investigation_id' => [
+                                'Investigation not found.',
+                            ],
+                        ]);
+                    }
+
+                    $directory = "investigation-{$investigationId}/documents";
+
+                    foreach ($files as $file) {
+                        $filename = uniqid('doc_', true) . '.' . $file->getClientOriginalExtension();
+
+                        $file->storeAs($directory, $filename, 'local');
+                        $storedPaths[] = "{$directory}/{$filename}";
+
+                        InvestigationDocument::create([
+                            'investigation_id' => $investigationId,
+                            'file_path' => "{$directory}/{$filename}",
+                            'original_name' => $file->getClientOriginalName(),
+                            'mime_type' => $file->getClientMimeType(),
+                            'size' => $file->getSize(),
+                        ]);
+                    }
+
+                    return $investigation->fresh([
+                        'clinic',
+                        'patient',
+                        'visit',
+                        'items',
+                        'documents',
                     ]);
                 }
+            );
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($storedPaths);
 
-                $directory = "investigation-{$investigationId}/documents";
-                $filename = uniqid('doc_', true) . '.' . $document->getClientOriginalExtension();
-
-                $document->storeAs($directory, $filename, 'local');
-
-                InvestigationDocument::create([
-                    'investigation_id' => $investigationId,
-                    'file_path' => "{$directory}/{$filename}",
-                    'original_name' => $document->getClientOriginalName(),
-                    'mime_type' => $document->getClientMimeType(),
-                    'size' => $document->getSize(),
-                ]);
-
-                return $investigation->fresh([
-                    'clinic',
-                    'patient',
-                    'visit',
-                    'items',
-                    'documents',
-                ]);
-            }
-        );
+            throw $exception;
+        }
     }
 
     public function destroy(int $investigationId, int $documentId): Investigation

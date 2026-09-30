@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Investigation\InvestigationDocumentRequest;
+use App\Http\Requests\Investigation\InvestigationDocumentUploadRequest;
 use App\Services\Investigation\InvestigationDocumentService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -11,17 +12,17 @@ use Illuminate\Http\JsonResponse;
 class InvestigationDocumentController extends Controller
 {
     public function store(
-        InvestigationDocumentRequest $request,
+        InvestigationDocumentUploadRequest $request,
         InvestigationDocumentService $service,
         int $investigationId
     ): JsonResponse {
         $investigation = $service->store(
             $investigationId,
-            $request->file('document')
+            $request->uploadedFiles()
         );
 
         return ApiResponse::created(
-            message: 'Investigation document uploaded successfully.',
+            message: 'Investigation documents uploaded successfully.',
             data: [
                 'investigation' => $investigation,
             ]
