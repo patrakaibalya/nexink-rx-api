@@ -11,6 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class PrescriptionService
 {
+    /**
+     * Also loads the visit's investigations and procedures with their
+     * uploaded report documents, so the prescription preview can show the
+     * lab / discharge reports for the same visit.
+     */
     public function show(int $prescriptionId): Prescription
     {
         $prescription = Prescription::query()
@@ -18,6 +23,10 @@ class PrescriptionService
                 'clinic',
                 'patient',
                 'visit',
+                'visit.investigations.items',
+                'visit.investigations.documents',
+                'visit.procedures.items',
+                'visit.procedures.documents',
                 'items',
             ])
             ->find($prescriptionId);
