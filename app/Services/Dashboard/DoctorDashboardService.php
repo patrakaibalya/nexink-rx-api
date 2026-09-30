@@ -8,24 +8,13 @@ use App\Models\PrescriptionShare;
 use App\Models\Queue;
 use App\Models\Visit;
 use App\Services\Order\OrderDataProvisioningService;
+use App\Support\OrderItemTotals;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class DoctorDashboardService
 {
-    /**
-     * Order statuses that count as a finished conversion, mirroring
-     * OrganizationDashboardService::CONVERTED_STATUSES.
-     */
-    private const CONVERTED_STATUSES = [
-        'submitted',
-        'pending',
-        'processing',
-        'shipped',
-        'delivered',
-    ];
-
     public function __construct(
         protected OrderDataProvisioningService $orderDataProvisioningService
     ) {
@@ -260,11 +249,11 @@ class DoctorDashboardService
 
         $orders = DB::table($orderTable)
             ->whereIn('prescription_share_id', $shareIds)
-            ->whereIn('status', self::CONVERTED_STATUSES)
+            ->whereIn('status', OrderItemTotals::CONVERTED_STATUSES)
             ->select(['items', 'grand_total'])
             ->get();
 
-        $amounts = $this->itemAmountBreakdown($orders);
+        $amounts = OrderItemTotals::breakdown($orders);
 
         return [
             'date' => $date,
@@ -276,36 +265,6 @@ class DoctorDashboardService
             'investigation_amount' => $amounts['investigation'],
             'procedure_amount' => $amounts['procedure'],
         ];
-    }
-
-    /**
-     * `items` is stored as a JSON blob per order (query builder rows don't
-     * get Eloquent's array casts), so the medicine/investigation/procedure
-     * split is summed in PHP rather than in SQL.
-     */
-    private function itemAmountBreakdown($orders): array
-    {
-        $totals = [
-            'medicine' => 0.0,
-            'investigation' => 0.0,
-            'procedure' => 0.0,
-        ];
-
-        foreach ($orders as $order) {
-            $items = json_decode($order->items ?? '[]', true) ?: [];
-
-            foreach ($items as $item) {
-                $type = $item['item_type'] ?? null;
-
-                if (!isset($totals[$type])) {
-                    continue;
-                }
-
-                $totals[$type] += (float) ($item['total'] ?? 0);
-            }
-        }
-
-        return array_map(fn ($total) => round($total, 2), $totals);
     }
 
     private function emptyCatalogValueSummary(

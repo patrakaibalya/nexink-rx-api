@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ClinicCatalogSearchController;
 use App\Http\Controllers\Api\ClinicController;
 use App\Http\Controllers\Api\ClinicPrescriptionTemplateController;
 use App\Http\Controllers\Api\DoctorDashboardController;
+use App\Http\Controllers\Api\DoctorReportController;
 use App\Http\Controllers\Api\DoctorHandwritingCorrectionController;
 use App\Http\Controllers\Api\DoctorHandwritingSampleController;
 use App\Http\Controllers\Api\DoctorMedicineLibraryController;
@@ -242,6 +243,7 @@ Route::middleware([
     Route::get('clinics/{clinicId}/procedures/search', [ClinicCatalogSearchController::class, 'procedures']);
 
     Route::get('dashboard/summary', [DoctorDashboardController::class, 'summary']);
+    Route::get('reports/patients', [DoctorReportController::class, 'patients']); //Date-range patient-wise earnings & prescribing report
 
     Route::get('visits', [VisitController::class, 'index']); //Date-wise consultation list
     Route::get('visits/resume-pending', [VisitController::class, 'resumePending']); //App relaunch: find a leftover visit/prescription to jump back into
