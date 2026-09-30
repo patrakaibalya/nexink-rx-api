@@ -98,6 +98,15 @@ TRUNCATE TABLE doctor_db_1.visits;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+## Show File in terminal
+- sudo apt install tree
+- show all file show command in terminal
+- sudo tree /var/www/nexink-rx-api/storage/app/private/doctor-1 /var/www/nexink-rx-api/storage/app/private/clinic-1
+
+## remove All file in server
+- sudo find /var/www/nexink-rx-api/storage/app/private/doctor-1 -mindepth 1 -delete
+- sudo find /var/www/nexink-rx-api/storage/app/private/clinic-1 -mindepth 1 -delete
+
 ## fillzilla file access file
 
 sudo chown -R www-data:www-data /var/www/nexink-rx-api/storage/app/private/doctor-1
