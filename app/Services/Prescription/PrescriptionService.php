@@ -2,8 +2,10 @@
 
 namespace App\Services\Prescription;
 
+use App\Models\DoctorHandwritingSample;
 use App\Models\Prescription;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 
@@ -102,29 +104,59 @@ class PrescriptionService
         );
     }
 
+    /**
+     * Permanent delete - same clean-up as VisitService::resetDirect(): the handwriting
+     * samples and their ink files, the items, then the prescription row itself.
+     * The visit is kept (it's the patient's visit history), only its prescription goes.
+     * Finalized prescriptions are medical records and can't be deleted.
+     *
+     * Note: handwriting-memory vectors already sent to Qdrant are not removed here
+     * (resetDirect doesn't remove them either).
+     */
     public function delete(int $prescriptionId): void
     {
-        $prescription = Prescription::query()
-            ->lockForUpdate()
-            ->find($prescriptionId);
+        // lockForUpdate only holds inside a transaction.
+        DB::connection('doctor')->transaction(
+            function () use ($prescriptionId) {
+                $prescription = Prescription::query()
+                    ->lockForUpdate()
+                    ->find($prescriptionId);
 
-        if (!$prescription) {
-            throw ValidationException::withMessages([
-                'prescription_id' => [
-                    'Prescription not found.',
-                ],
-            ]);
-        }
+                if (!$prescription) {
+                    throw ValidationException::withMessages([
+                        'prescription_id' => [
+                            'Prescription not found.',
+                        ],
+                    ]);
+                }
 
-        if ($prescription->status === 'final') {
-            throw ValidationException::withMessages([
-                'prescription' => [
-                    'A finalized prescription cannot be deleted.',
-                ],
-            ]);
-        }
+                if ($prescription->status === 'final') {
+                    throw ValidationException::withMessages([
+                        'prescription' => [
+                            'A finalized prescription cannot be deleted.',
+                        ],
+                    ]);
+                }
 
-        $prescription->delete();
+                DoctorHandwritingSample::query()
+                    ->where('prescription_id', $prescription->id)
+                    ->get()
+                    ->each(function (DoctorHandwritingSample $sample) {
+                        if (
+                            $sample->ink_file_path
+                            && Storage::disk('local')->exists($sample->ink_file_path)
+                        ) {
+                            Storage::disk('local')->delete($sample->ink_file_path);
+                        }
+
+                        $sample->delete();
+                    });
+
+                // Items use SoftDeletes - remove the rows for real, not just mark them.
+                $prescription->items()->forceDelete();
+                $prescription->forceDelete();
+            }
+        );
     }
 
     public function index(array $filters)
