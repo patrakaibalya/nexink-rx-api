@@ -28,6 +28,26 @@ class InvestigationDocumentController extends Controller
         );
     }
 
+    public function replace(
+        InvestigationDocumentRequest $request,
+        InvestigationDocumentService $service,
+        int $investigationId,
+        int $documentId
+    ): JsonResponse {
+        $investigation = $service->replace(
+            $investigationId,
+            $documentId,
+            $request->file('document')
+        );
+
+        return ApiResponse::success(
+            message: 'Investigation document updated successfully.',
+            data: [
+                'investigation' => $investigation,
+            ]
+        );
+    }
+
     public function destroy(
         InvestigationDocumentService $service,
         int $investigationId,

@@ -277,6 +277,7 @@ Route::middleware([
     Route::post('investigations/{investigationId}/complete', [InvestigationController::class, 'complete']);
     Route::post('investigations/{investigationId}/documents', [InvestigationDocumentController::class, 'store']);
     Route::get('investigations/{investigationId}/documents/{documentId}/file', [InvestigationDocumentController::class, 'file']);
+    Route::post('investigations/{investigationId}/documents/{documentId}', [InvestigationDocumentController::class, 'replace']); //Replace the file of an uploaded report
     Route::delete('investigations/{investigationId}/documents/{documentId}', [InvestigationDocumentController::class, 'destroy']);
 
     Route::get('procedures/{procedureId}', [ProcedureController::class, 'show']);
@@ -286,6 +287,7 @@ Route::middleware([
     Route::post('procedures/{procedureId}/complete', [ProcedureController::class, 'complete']);
     Route::post('procedures/{procedureId}/documents', [ProcedureDocumentController::class, 'store']);
     Route::get('procedures/{procedureId}/documents/{documentId}/file', [ProcedureDocumentController::class, 'file']);
+    Route::post('procedures/{procedureId}/documents/{documentId}', [ProcedureDocumentController::class, 'replace']); //Replace the file of an uploaded report
     Route::delete('procedures/{procedureId}/documents/{documentId}', [ProcedureDocumentController::class, 'destroy']);
 
     Route::get('medicine-organizations', [DoctorMedicineOrganizationController::class, 'index']);

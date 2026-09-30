@@ -28,6 +28,26 @@ class ProcedureDocumentController extends Controller
         );
     }
 
+    public function replace(
+        ProcedureDocumentRequest $request,
+        ProcedureDocumentService $service,
+        int $procedureId,
+        int $documentId
+    ): JsonResponse {
+        $procedure = $service->replace(
+            $procedureId,
+            $documentId,
+            $request->file('document')
+        );
+
+        return ApiResponse::success(
+            message: 'Procedure document updated successfully.',
+            data: [
+                'procedure' => $procedure,
+            ]
+        );
+    }
+
     public function destroy(
         ProcedureDocumentService $service,
         int $procedureId,

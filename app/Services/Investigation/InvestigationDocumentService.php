@@ -94,6 +94,55 @@ class InvestigationDocumentService
         );
     }
 
+    /**
+     * Swap the file behind an existing document (e.g. a corrected lab
+     * report) while keeping the same document row, then remove the old
+     * file from disk once the new one is saved.
+     */
+    public function replace(int $investigationId, int $documentId, UploadedFile $file): Investigation
+    {
+        return DB::connection('doctor')->transaction(
+            function () use ($investigationId, $documentId, $file) {
+                $investigation = Investigation::find($investigationId);
+
+                if (!$investigation) {
+                    throw ValidationException::withMessages([
+                        'investigation_id' => [
+                            'Investigation not found.',
+                        ],
+                    ]);
+                }
+
+                $document = $this->find($investigationId, $documentId);
+                $oldPath = $document->file_path;
+
+                $directory = "investigation-{$investigationId}/documents";
+                $filename = uniqid('doc_', true) . '.' . $file->getClientOriginalExtension();
+
+                $file->storeAs($directory, $filename, 'local');
+
+                $document->update([
+                    'file_path' => "{$directory}/{$filename}",
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+
+                if ($oldPath !== $document->file_path && Storage::disk('local')->exists($oldPath)) {
+                    Storage::disk('local')->delete($oldPath);
+                }
+
+                return $investigation->fresh([
+                    'clinic',
+                    'patient',
+                    'visit',
+                    'items',
+                    'documents',
+                ]);
+            }
+        );
+    }
+
     public function find(int $investigationId, int $documentId): InvestigationDocument
     {
         $document = InvestigationDocument::query()

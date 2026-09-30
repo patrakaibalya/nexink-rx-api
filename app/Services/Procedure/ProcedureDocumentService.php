@@ -94,6 +94,55 @@ class ProcedureDocumentService
         );
     }
 
+    /**
+     * Swap the file behind an existing document (e.g. a corrected lab
+     * report) while keeping the same document row, then remove the old
+     * file from disk once the new one is saved.
+     */
+    public function replace(int $procedureId, int $documentId, UploadedFile $file): Procedure
+    {
+        return DB::connection('doctor')->transaction(
+            function () use ($procedureId, $documentId, $file) {
+                $procedure = Procedure::find($procedureId);
+
+                if (!$procedure) {
+                    throw ValidationException::withMessages([
+                        'procedure_id' => [
+                            'Procedure not found.',
+                        ],
+                    ]);
+                }
+
+                $document = $this->find($procedureId, $documentId);
+                $oldPath = $document->file_path;
+
+                $directory = "procedure-{$procedureId}/documents";
+                $filename = uniqid('doc_', true) . '.' . $file->getClientOriginalExtension();
+
+                $file->storeAs($directory, $filename, 'local');
+
+                $document->update([
+                    'file_path' => "{$directory}/{$filename}",
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+
+                if ($oldPath !== $document->file_path && Storage::disk('local')->exists($oldPath)) {
+                    Storage::disk('local')->delete($oldPath);
+                }
+
+                return $procedure->fresh([
+                    'clinic',
+                    'patient',
+                    'visit',
+                    'items',
+                    'documents',
+                ]);
+            }
+        );
+    }
+
     public function find(int $procedureId, int $documentId): ProcedureDocument
     {
         $document = ProcedureDocument::query()
