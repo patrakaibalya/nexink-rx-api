@@ -43,6 +43,11 @@ class PrescriptionIndexRequest extends FormRequest
                 'date',
             ],
 
+            'has_items' => [
+                'nullable',
+                'boolean',
+            ],
+
             'per_page' => [
                 'nullable',
                 'integer',

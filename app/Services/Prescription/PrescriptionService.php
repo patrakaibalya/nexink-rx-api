@@ -193,6 +193,10 @@ class PrescriptionService
             );
         }
 
+        if (!empty($filters['has_items'])) {
+            $query->has('items');
+        }
+
         return $query->paginate(
             $filters['per_page'] ?? 20
         );
