@@ -64,6 +64,12 @@ class Visit extends Model
     {
         return $this->hasMany(ClinicalExtraction::class);
     }
+    public function vitals()
+    {
+        return $this->hasMany(PatientVital::class)
+            ->orderByDesc('recorded_at');
+    }
+
     public function investigations()
     {
         return $this->hasMany(Investigation::class);

@@ -40,6 +40,19 @@ class Patient extends Model
         ];
     }
 
+    public function vitals()
+    {
+        return $this->hasMany(PatientVital::class)
+            ->orderByDesc('recorded_at')
+            ->orderByDesc('id');
+    }
+
+    public function latestVital()
+    {
+        return $this->hasOne(PatientVital::class)
+            ->latestOfMany('recorded_at');
+    }
+
     public function visits()
     {
         return $this->hasMany(Visit::class);

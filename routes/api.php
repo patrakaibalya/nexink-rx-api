@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\OrganizationReportController;
 use App\Http\Controllers\Api\OrganizationMedicineController;
 use App\Http\Controllers\Api\OrganizationProcedureController;
 use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\PatientVitalController;
 use App\Http\Controllers\Api\PrescriptionController;
 use App\Http\Controllers\Api\PrescriptionShareController;
 use App\Http\Controllers\Api\ProcedureController;
@@ -197,6 +198,10 @@ Route::middleware([
     Route::put('patients/{patientId}', [PatientController::class, 'update']);
     Route::delete('patients/{patientId}', [PatientController::class, 'destroy']);
     Route::get('patients/{patientId}/clinical-history', [PatientController::class, 'clinicalHistory']);
+    Route::get('patients/{patientId}/vitals', [PatientVitalController::class, 'index']); //Per-visit vitals history + latest values
+    Route::post('patients/{patientId}/vitals', [PatientVitalController::class, 'store']);
+    Route::patch('patients/{patientId}/vitals/{vitalId}', [PatientVitalController::class, 'update']);
+    Route::delete('patients/{patientId}/vitals/{vitalId}', [PatientVitalController::class, 'destroy']);
 
     Route::get('clinics', [ClinicController::class, 'index']);
     Route::post('clinics', [ClinicController::class, 'store']);

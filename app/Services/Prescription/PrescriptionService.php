@@ -4,6 +4,7 @@ namespace App\Services\Prescription;
 
 use App\Models\DoctorHandwritingSample;
 use App\Models\Prescription;
+use App\Services\Patient\PatientVitalService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -11,10 +12,16 @@ use Illuminate\Validation\ValidationException;
 
 class PrescriptionService
 {
+    public function __construct(
+        protected PatientVitalService $vitalService
+    ) {
+    }
+
     /**
      * Also loads the visit's investigations and procedures with their
      * uploaded report documents, so the prescription preview can show the
-     * lab / discharge reports for the same visit.
+     * lab / discharge reports for the same visit, and the vitals recorded
+     * for that visit.
      */
     public function show(int $prescriptionId): Prescription
     {
@@ -38,6 +45,10 @@ class PrescriptionService
                 ],
             ]);
         }
+
+        // Vitals as recorded for this visit, so old prescriptions never show later readings.
+        $prescription->visit?->setRelation('clinic', $prescription->clinic);
+        $prescription->setAttribute('vitals', $this->vitalService->forVisit($prescription->visit));
 
         return $prescription;
     }

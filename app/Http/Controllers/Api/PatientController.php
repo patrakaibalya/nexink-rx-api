@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Patient\ClinicalHistoryRequest;
 use App\Http\Requests\Patient\PatientStoreRequest;
 use App\Models\Patient;
+use App\Services\Patient\PatientVitalService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -14,6 +15,7 @@ class PatientController extends Controller
     public function index(): JsonResponse
     {
         $patients = Patient::query()
+            ->with('latestVital')
             ->latest()
             ->get();
 
@@ -25,11 +27,15 @@ class PatientController extends Controller
         );
     }
 
-    public function store(PatientStoreRequest $request): JsonResponse
-    {
+    public function store(
+        PatientStoreRequest $request,
+        PatientVitalService $vitalService
+    ): JsonResponse {
         $patient = Patient::create(
             $request->validated()
         );
+
+        $vitalService->recordFromProfile($patient, $request->validated());
 
         return ApiResponse::created(
             message: 'Patient registered successfully.',
@@ -41,7 +47,7 @@ class PatientController extends Controller
 
     public function show(int $patientId): JsonResponse
     {
-        $patient = Patient::find($patientId);
+        $patient = Patient::with('latestVital')->find($patientId);
 
         if (!$patient) {
             return ApiResponse::notFound(
@@ -59,6 +65,7 @@ class PatientController extends Controller
 
     public function update(
         PatientStoreRequest $request,
+        PatientVitalService $vitalService,
         int $patientId
     ): JsonResponse {
         $patient = Patient::find($patientId);
@@ -69,9 +76,13 @@ class PatientController extends Controller
             );
         }
 
+        $previous = $patient->only(['weight', 'height', 'blood_pressure_result', 'diabetic_result', 'thyroid_result']);
+
         $patient->update(
             $request->validated()
         );
+
+        $vitalService->recordFromProfile($patient, $request->validated(), $previous);
 
         return ApiResponse::success(
             message: 'Patient updated successfully.',
