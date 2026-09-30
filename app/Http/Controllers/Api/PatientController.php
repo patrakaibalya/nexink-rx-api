@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Patient\ClinicalHistoryRequest;
+use App\Http\Requests\Patient\PatientIndexRequest;
 use App\Http\Requests\Patient\PatientStoreRequest;
 use App\Models\Patient;
 use App\Services\Patient\PatientVitalService;
@@ -12,12 +13,39 @@ use Illuminate\Http\JsonResponse;
 
 class PatientController extends Controller
 {
-    public function index(): JsonResponse
+    /**
+     * Paginated roster, newest first. `search` matches name, mobile or
+     * email; `gender=other` covers anything that isn't male / female.
+     */
+    public function index(PatientIndexRequest $request): JsonResponse
     {
+        $search = trim((string) $request->input('search', ''));
+        $gender = $request->input('gender');
+
         $patients = Patient::query()
             ->with('latestVital')
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%' . addcslashes($search, '%_\\') . '%';
+
+                $query->where(function ($query) use ($like) {
+                    $query->where('name', 'like', $like)
+                        ->orWhere('mobile', 'like', $like)
+                        ->orWhere('email', 'like', $like);
+                });
+            })
+            ->when(in_array($gender, ['male', 'female'], true), fn ($query) => $query->where('gender', $gender))
+            ->when($gender === 'other', function ($query) {
+                $query->where(function ($query) {
+                    $query->whereNull('gender')
+                        ->orWhereNotIn('gender', ['male', 'female']);
+                });
+            })
             ->latest()
-            ->get();
+            ->latest('id')
+            ->paginate(
+                perPage: $request->integer('per_page', 15),
+                page: $request->integer('page', 1)
+            );
 
         return ApiResponse::success(
             message: 'Patients retrieved successfully.',
