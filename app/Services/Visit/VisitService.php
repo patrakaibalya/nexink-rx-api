@@ -590,9 +590,10 @@ class VisitService
      *   handed back for the Review stage.
      * - An in-progress visit with no prescription yet is left alone and
      *   handed back for the writing stage.
-     * - Otherwise, the most recent already-unverified prescription (e.g.
-     *   from an earlier Skip that was never reviewed) is handed back
-     *   for the Review stage.
+     * - Already-unverified prescriptions (from Skip, or left again after a
+     *   Reopen) are NOT handed back: the doctor chose to review them later,
+     *   and forcing one open on every launch made Skip pointless. They stay
+     *   in the Review list (prescriptions?status=unverified).
      */
     public function resumePending(): array
     {
@@ -632,28 +633,6 @@ class VisitService
                 'prescription' => $visit->prescription()
                     ->with('items')
                     ->first(),
-            ];
-        }
-
-        $unverifiedPrescription = Prescription::query()
-            ->with('items')
-            ->where('status', 'unverified')
-            ->latest('id')
-            ->first();
-
-        if ($unverifiedPrescription) {
-            return [
-                'resume_available' => true,
-                'stage' => 'review',
-                'visit' => Visit::query()
-                    ->with([
-                        'clinic',
-                        'patient',
-                        'appointment',
-                        'queue',
-                    ])
-                    ->find($unverifiedPrescription->visit_id),
-                'prescription' => $unverifiedPrescription,
             ];
         }
 
