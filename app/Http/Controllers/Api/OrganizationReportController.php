@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Report\OrganizationSalesReportRequest;
 use App\Models\DoctorAccount;
 use App\Models\DoctorMedicineSubscription;
 use App\Models\PrescriptionShare;
 use App\Services\Order\OrderDataProvisioningService;
+use App\Services\Report\OrganizationReportService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,6 +46,29 @@ class OrganizationReportController extends Controller
             message: 'Doctors retrieved successfully.',
             data: [
                 'doctors' => $doctors,
+            ]
+        );
+    }
+
+    /**
+     * Date-range sales report: order-wise rows, totals, daily revenue,
+     * doctor-wise referrals and top-selling items.
+     */
+    public function sales(
+        OrganizationSalesReportRequest $request,
+        OrganizationReportService $reportService
+    ): JsonResponse {
+        $report = $reportService->salesReport(
+            $request->user()->id,
+            $request->input('from_date'),
+            $request->input('to_date'),
+            $request->filled('doctor_id') ? $request->integer('doctor_id') : null
+        );
+
+        return ApiResponse::success(
+            message: 'Sales report retrieved successfully.',
+            data: [
+                'report' => $report,
             ]
         );
     }

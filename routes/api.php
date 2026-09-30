@@ -84,6 +84,7 @@ Route::middleware([
 
     Route::get('reports/doctors', [OrganizationReportController::class, 'doctors']);
     Route::get('reports/unrecognised-medicines', [OrganizationReportController::class, 'unrecognisedMedicines']);
+    Route::get('reports/sales', [OrganizationReportController::class, 'sales']); //Date-range order-wise sales, doctor referrals & top items
 
     Route::get('subscription-requests', [MedicineOrganizationSubscriptionController::class, 'index']);
     Route::patch('subscription-requests/{subscriptionId}', [MedicineOrganizationSubscriptionController::class, 'update']);
