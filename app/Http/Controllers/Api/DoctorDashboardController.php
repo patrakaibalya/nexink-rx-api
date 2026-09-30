@@ -15,7 +15,8 @@ class DoctorDashboardController extends Controller
         DoctorDashboardService $dashboardService
     ): JsonResponse {
         $summary = $dashboardService->summary(
-            $request->integer('clinic_id')
+            $request->integer('clinic_id'),
+            $request->input('date')
         );
 
         return ApiResponse::success(

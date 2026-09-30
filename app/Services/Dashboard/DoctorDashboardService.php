@@ -31,7 +31,11 @@ class DoctorDashboardService
     ) {
     }
 
-    public function summary(int $clinicId): array
+    /**
+     * Summary for the given clinic-local date, defaulting to "today" in the
+     * clinic's timezone when no date is passed.
+     */
+    public function summary(int $clinicId, ?string $date = null): array
     {
         $clinic = Clinic::query()
             ->select([
@@ -55,7 +59,7 @@ class DoctorDashboardService
             ];
         }
 
-        $today = Carbon::now($clinic->timezone)
+        $today = $date ?? Carbon::now($clinic->timezone)
             ->toDateString();
 
         return [

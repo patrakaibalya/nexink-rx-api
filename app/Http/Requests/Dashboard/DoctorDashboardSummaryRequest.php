@@ -18,6 +18,10 @@ class DoctorDashboardSummaryRequest extends FormRequest
                 'required',
                 'integer',
             ],
+            'date' => [
+                'nullable',
+                'date_format:Y-m-d',
+            ],
         ];
     }
 }

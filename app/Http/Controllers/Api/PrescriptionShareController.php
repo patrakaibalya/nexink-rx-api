@@ -27,6 +27,13 @@ class PrescriptionShareController extends Controller
     ): JsonResponse {
         $doctor = $request->user();
 
+        $request->validate([
+            'date' => [
+                'nullable',
+                'date_format:Y-m-d',
+            ],
+        ]);
+
         $shares = PrescriptionShare::query()
             ->where('doctor_id', $doctor->id)
             ->when(
@@ -36,6 +43,10 @@ class PrescriptionShareController extends Controller
             ->when(
                 $request->query('organization_id'),
                 fn ($query, $organizationId) => $query->where('organization_id', $organizationId)
+            )
+            ->when(
+                $request->query('date'),
+                fn ($query, $date) => $query->whereDate('shared_at', $date)
             )
             ->with('organization:id,organization_name')
             ->latest('id')
@@ -64,6 +75,13 @@ class PrescriptionShareController extends Controller
     ): JsonResponse {
         $doctor = $request->user();
 
+        $request->validate([
+            'date' => [
+                'nullable',
+                'date_format:Y-m-d',
+            ],
+        ]);
+
         $doctorShares = PrescriptionShare::query()
             ->where('doctor_id', $doctor->id)
             ->when(
@@ -87,6 +105,10 @@ class PrescriptionShareController extends Controller
             ->when(
                 $request->query('status'),
                 fn ($query, $status) => $query->where('status', $status)
+            )
+            ->when(
+                $request->query('date'),
+                fn ($query, $date) => $query->whereDate('shared_at', $date)
             )
             ->whereNotIn('id', $submittedShareIds)
             ->with('organization:id,organization_name')

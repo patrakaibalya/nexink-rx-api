@@ -14,6 +14,12 @@ class PrescriptionIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'clinic_id' => [
+                'nullable',
+                'integer',
+                'exists:doctor.clinics,id',
+            ],
+
             'patient_id' => [
                 'nullable',
                 'integer',

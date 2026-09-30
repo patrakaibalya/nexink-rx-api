@@ -129,6 +129,10 @@ class InvestigationService
             ])
             ->latest('id');
 
+        if (!empty($filters['clinic_id'])) {
+            $query->where('clinic_id', $filters['clinic_id']);
+        }
+
         if (!empty($filters['patient_id'])) {
             $query->where('patient_id', $filters['patient_id']);
         }
