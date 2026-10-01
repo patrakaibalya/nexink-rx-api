@@ -3,6 +3,7 @@
 namespace App\Services\Doctor;
 
 use App\Models\DoctorHandwritingSample;
+use App\Models\DoctorManualCorrection;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -12,15 +13,19 @@ class DoctorHandwritingCorrectionService
     /**
      * Maps the categorized-JSON keys the Android app stores in
      * raw_recognized_text/final_corrected_text to the Clinical Dictionary
-     * category the app files a learned correction under. Free-text sections
-     * (Instructions, Follow Up, Other) are intentionally excluded - the
-     * Android app's own learning path skips them too.
+     * category the app files a learned correction under. Same mapping as the
+     * app's PrescriptionReviewVm.dictionaryCategoryFor. The free-text sections
+     * (Instruction, FollowUp, Other) are included so a reinstall restores them;
+     * the app keeps them out of recognition matching on its own side.
      */
     private const CATEGORY_MAP = [
         'ADVISED MEDICATIONS' => 'Medicine',
         'INVESTIGATIONS' => 'Investigation',
         'PROCEDURES' => 'Procedure',
         'SYMPTOMS' => 'Symptom',
+        'INSTRUCTIONS' => 'Instruction',
+        'FOLLOW UP' => 'FollowUp',
+        'OTHER' => 'Other',
     ];
 
     private const FREQUENCY_ABBREVIATIONS = [
@@ -59,11 +64,76 @@ class DoctorHandwritingCorrectionService
             }
         });
 
+        // Pairs the doctor added by hand on the Clinical Dictionary screen.
+        $manualQuery = DoctorManualCorrection::query()->where('doctor_id', $doctorId);
+
+        if ($since) {
+            $manualQuery->where('updated_at', '>=', Carbon::parse($since));
+        }
+
+        foreach ($manualQuery->orderBy('updated_at')->get() as $manual) {
+            $corrections[] = [
+                'raw_recognized_text' => $manual->wrong_word,
+                'final_corrected_text' => $manual->correct_word,
+                'category' => $manual->category,
+                'medicine_id' => null,
+                'sample_id' => null,
+                'source' => 'manual',
+                'corrected_at' => optional($manual->updated_at)->toIso8601ZuluString(),
+            ];
+        }
+
         return [
             'corrections' => $corrections,
             'count' => count($corrections),
             'synced_at' => now()->toIso8601ZuluString(),
         ];
+    }
+
+    /**
+     * Saves a pair added by hand on the app's Clinical Dictionary screen.
+     * Saving the same pair again only refreshes updated_at.
+     */
+    public function saveManualCorrection(
+        int $doctorId,
+        string $wrongWord,
+        string $correctWord,
+        string $category
+    ): DoctorManualCorrection {
+        $correction = DoctorManualCorrection::query()->firstOrCreate([
+            'doctor_id' => $doctorId,
+            'wrong_word' => trim($wrongWord),
+            'correct_word' => trim($correctWord),
+            'category' => $category,
+        ]);
+
+        if (!$correction->wasRecentlyCreated) {
+            $correction->touch();
+        }
+
+        return $correction;
+    }
+
+    /**
+     * Removes manual pairs for one correct word. With $wrongWord only that
+     * pair goes; without it, every pair of the word (the term was deleted).
+     */
+    public function deleteManualCorrections(
+        int $doctorId,
+        string $correctWord,
+        string $category,
+        ?string $wrongWord = null
+    ): int {
+        $query = DoctorManualCorrection::query()
+            ->where('doctor_id', $doctorId)
+            ->where('correct_word', trim($correctWord))
+            ->where('category', $category);
+
+        if ($wrongWord !== null) {
+            $query->where('wrong_word', trim($wrongWord));
+        }
+
+        return $query->delete();
     }
 
     private function diffSample(DoctorHandwritingSample $sample): array
@@ -107,6 +177,7 @@ class DoctorHandwritingCorrectionService
                     'category' => $category,
                     'medicine_id' => null,
                     'sample_id' => $sample->id,
+                    'source' => 'prescription',
                     'corrected_at' => $correctedAt,
                 ];
             }

@@ -191,6 +191,8 @@ Route::middleware([
 
     Route::post('handwriting/correct', [DoctorHandwritingCorrectionController::class, 'correct']);
     Route::get('handwriting-corrections', [DoctorHandwritingCorrectionController::class, 'list']);
+    Route::post('handwriting-corrections/manual', [DoctorHandwritingCorrectionController::class, 'storeManual']);
+    Route::delete('handwriting-corrections/manual', [DoctorHandwritingCorrectionController::class, 'destroyManual']);
 
     Route::get('patients', [PatientController::class, 'index']);
     Route::post('patients', [PatientController::class, 'store']);

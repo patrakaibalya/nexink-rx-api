@@ -36,7 +36,8 @@ class DoctorHandwritingCorrectionController extends Controller
      * Bulk sync for the Android app's local Clinical Dictionary
      * (DictionaryManagementRepository.syncCorrectionsFromServer): every
      * word-level correction this doctor has ever confirmed, derived from
-     * their stored handwriting samples rather than a live Qdrant lookup.
+     * their stored handwriting samples rather than a live Qdrant lookup,
+     * plus the pairs they added by hand (doctor_manual_corrections).
      */
     public function list(
         Request $request,
@@ -59,6 +60,70 @@ class DoctorHandwritingCorrectionController extends Controller
         return ApiResponse::success(
             message: 'Doctor handwriting corrections retrieved successfully.',
             data: $result
+        );
+    }
+
+    /**
+     * Backs up a wrong -> correct pair the doctor added by hand on the app's
+     * Clinical Dictionary screen, so a reinstall's sync restores it.
+     */
+    public function storeManual(
+        Request $request,
+        DoctorHandwritingCorrectionService $doctorHandwritingCorrectionService
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $data = Validator::make(
+            $request->all(),
+            [
+                'wrong_word' => ['required', 'string', 'max:191'],
+                'correct_word' => ['required', 'string', 'max:191'],
+                'category' => ['required', 'string', 'max:50'],
+            ]
+        )->validate();
+
+        $correction = $doctorHandwritingCorrectionService->saveManualCorrection(
+            doctorId: $doctor->id,
+            wrongWord: $data['wrong_word'],
+            correctWord: $data['correct_word'],
+            category: $data['category']
+        );
+
+        return ApiResponse::success(
+            message: 'Manual correction saved successfully.',
+            data: ['correction' => $correction]
+        );
+    }
+
+    /**
+     * Deletes one manual pair, or all of a word's manual pairs when
+     * wrong_word is left out (the word was deleted from the dictionary).
+     */
+    public function destroyManual(
+        Request $request,
+        DoctorHandwritingCorrectionService $doctorHandwritingCorrectionService
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $data = Validator::make(
+            $request->query(),
+            [
+                'correct_word' => ['required', 'string', 'max:191'],
+                'category' => ['required', 'string', 'max:50'],
+                'wrong_word' => ['nullable', 'string', 'max:191'],
+            ]
+        )->validate();
+
+        $deleted = $doctorHandwritingCorrectionService->deleteManualCorrections(
+            doctorId: $doctor->id,
+            correctWord: $data['correct_word'],
+            category: $data['category'],
+            wrongWord: $data['wrong_word'] ?? null
+        );
+
+        return ApiResponse::success(
+            message: 'Manual correction deleted successfully.',
+            data: ['deleted' => $deleted]
         );
     }
 }
