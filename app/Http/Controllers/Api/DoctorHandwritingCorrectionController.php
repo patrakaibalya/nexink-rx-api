@@ -96,6 +96,40 @@ class DoctorHandwritingCorrectionController extends Controller
     }
 
     /**
+     * The doctor renamed a word (or changed its category) in the app's
+     * Clinical Dictionary; its manual pairs are moved to the new word.
+     */
+    public function renameManual(
+        Request $request,
+        DoctorHandwritingCorrectionService $doctorHandwritingCorrectionService
+    ): JsonResponse {
+        $doctor = $request->user();
+
+        $data = Validator::make(
+            $request->all(),
+            [
+                'old_word' => ['required', 'string', 'max:191'],
+                'old_category' => ['required', 'string', 'max:50'],
+                'new_word' => ['required', 'string', 'max:191'],
+                'new_category' => ['required', 'string', 'max:50'],
+            ]
+        )->validate();
+
+        $renamed = $doctorHandwritingCorrectionService->renameManualCorrections(
+            doctorId: $doctor->id,
+            oldWord: $data['old_word'],
+            oldCategory: $data['old_category'],
+            newWord: $data['new_word'],
+            newCategory: $data['new_category']
+        );
+
+        return ApiResponse::success(
+            message: 'Manual corrections renamed successfully.',
+            data: ['renamed' => $renamed]
+        );
+    }
+
+    /**
      * Deletes one manual pair, or all of a word's manual pairs when
      * wrong_word is left out (the word was deleted from the dictionary).
      */

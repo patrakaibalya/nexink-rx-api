@@ -35,44 +35,54 @@ class DoctorHandwritingCorrectionService
     /**
      * Lists this doctor's word-level handwriting corrections, derived from
      * the raw-vs-final text already stored on every prescription handwriting
-     * sample - no separate correction table needed. Diffing happens per
-     * (category, word id) so a "corrected" word is one the doctor actually
-     * changed during Review, matching how the Android app's own local
-     * learning path (PrescriptionReviewVm.learnFromCorrections) decides
-     * what counts as a correction.
+     * sample, plus the pairs added by hand (doctor_manual_corrections).
+     * Diffing happens per (category, word id) so a "corrected" word is one
+     * the doctor actually changed during Review, matching how the Android
+     * app's own local learning path (PrescriptionReviewVm.learnFromCorrections)
+     * decides what counts as a correction.
+     *
+     * Each wrong -> correct pair appears once, with occurrence_count = how
+     * many saved Rx pages (plus 1 if also added by hand) contain it, counted
+     * over all time. The app keeps the larger of its own count and this one,
+     * so syncing again - or a correction it already learned locally - never
+     * counts twice. With $since, only pairs seen again since then are sent.
      */
     public function listCorrections(int $doctorId, ?string $since = null): array
     {
-        $query = DoctorHandwritingSample::query()
+        // Taken before reading, so a correction saved while this runs is
+        // still >= the next sync's since and isn't missed.
+        $syncedAt = now();
+        $sinceAt = $since ? Carbon::parse($since) : null;
+
+        $pairs = [];
+
+        DoctorHandwritingSample::query()
             ->where('doctor_id', $doctorId)
             ->where('sample_type', 'prescription')
             ->whereNotNull('raw_recognized_text')
-            ->whereNotNull('final_corrected_text');
-
-        if ($since) {
-            $query->where('updated_at', '>=', Carbon::parse($since));
-        }
-
-        $corrections = [];
-
-        $query->orderBy('updated_at')->chunk(50, function ($samples) use (&$corrections) {
-            foreach ($samples as $sample) {
-                $corrections = array_merge(
-                    $corrections,
-                    $this->diffSample($sample)
-                );
-            }
-        });
+            ->whereNotNull('final_corrected_text')
+            ->chunkById(50, function ($samples) use (&$pairs) {
+                foreach ($samples as $sample) {
+                    // One page counts a pair once, even if the word repeats on it.
+                    $seenOnPage = [];
+                    foreach ($this->diffSample($sample) as $entry) {
+                        $key = $this->pairKey($entry);
+                        if (isset($seenOnPage[$key])) {
+                            continue;
+                        }
+                        $seenOnPage[$key] = true;
+                        $this->addPair($pairs, $key, $entry, $sample->updated_at);
+                    }
+                }
+            });
 
         // Pairs the doctor added by hand on the Clinical Dictionary screen.
-        $manualQuery = DoctorManualCorrection::query()->where('doctor_id', $doctorId);
+        $manualRows = DoctorManualCorrection::query()
+            ->where('doctor_id', $doctorId)
+            ->get();
 
-        if ($since) {
-            $manualQuery->where('updated_at', '>=', Carbon::parse($since));
-        }
-
-        foreach ($manualQuery->orderBy('updated_at')->get() as $manual) {
-            $corrections[] = [
+        foreach ($manualRows as $manual) {
+            $entry = [
                 'raw_recognized_text' => $manual->wrong_word,
                 'final_corrected_text' => $manual->correct_word,
                 'category' => $manual->category,
@@ -81,13 +91,57 @@ class DoctorHandwritingCorrectionService
                 'source' => 'manual',
                 'corrected_at' => optional($manual->updated_at)->toIso8601ZuluString(),
             ];
+            $this->addPair($pairs, $this->pairKey($entry), $entry, $manual->updated_at);
         }
+
+        $corrections = [];
+        foreach ($pairs as $pair) {
+            if ($sinceAt && (!$pair['latest'] || $pair['latest']->lt($sinceAt))) {
+                continue;
+            }
+            unset($pair['latest']);
+            $corrections[] = $pair;
+        }
+
+        usort(
+            $corrections,
+            fn ($a, $b) => strcmp((string) $a['corrected_at'], (string) $b['corrected_at'])
+        );
 
         return [
             'corrections' => $corrections,
             'count' => count($corrections),
-            'synced_at' => now()->toIso8601ZuluString(),
+            'synced_at' => $syncedAt->toIso8601ZuluString(),
         ];
+    }
+
+    /**
+     * Same pair = same wrong word (exact, as the app stores it), same
+     * correct word (any case - the app's term lookup ignores case) and
+     * same category.
+     */
+    private function pairKey(array $entry): string
+    {
+        return $entry['raw_recognized_text']
+            . "\u{1F}" . mb_strtolower($entry['final_corrected_text'])
+            . "\u{1F}" . $entry['category'];
+    }
+
+    /** Adds one occurrence; the newest occurrence decides the shown text, source and time. */
+    private function addPair(array &$pairs, string $key, array $entry, ?Carbon $at): void
+    {
+        if (!isset($pairs[$key])) {
+            $pairs[$key] = $entry + ['occurrence_count' => 1, 'latest' => $at];
+            return;
+        }
+
+        $pairs[$key]['occurrence_count']++;
+
+        $latest = $pairs[$key]['latest'];
+        if ($at && (!$latest || $at->gt($latest))) {
+            $count = $pairs[$key]['occurrence_count'];
+            $pairs[$key] = $entry + ['occurrence_count' => $count, 'latest' => $at];
+        }
     }
 
     /**
@@ -112,6 +166,46 @@ class DoctorHandwritingCorrectionService
         }
 
         return $correction;
+    }
+
+    /**
+     * The doctor renamed a word (or changed its category) on the Clinical
+     * Dictionary screen: its manual pairs follow. A pair that already exists
+     * under the new word is kept once, not duplicated.
+     */
+    public function renameManualCorrections(
+        int $doctorId,
+        string $oldWord,
+        string $oldCategory,
+        string $newWord,
+        string $newCategory
+    ): int {
+        $rows = DoctorManualCorrection::query()
+            ->where('doctor_id', $doctorId)
+            ->where('correct_word', trim($oldWord))
+            ->where('category', $oldCategory)
+            ->get();
+
+        foreach ($rows as $row) {
+            $alreadyThere = DoctorManualCorrection::query()
+                ->where('doctor_id', $doctorId)
+                ->where('wrong_word', $row->wrong_word)
+                ->where('correct_word', trim($newWord))
+                ->where('category', $newCategory)
+                ->where('id', '!=', $row->id)
+                ->exists();
+
+            if ($alreadyThere) {
+                $row->delete();
+            } else {
+                $row->update([
+                    'correct_word' => trim($newWord),
+                    'category' => $newCategory,
+                ]);
+            }
+        }
+
+        return $rows->count();
     }
 
     /**
